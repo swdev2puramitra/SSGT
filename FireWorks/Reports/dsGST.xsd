@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="dsGST" targetNamespace="http://tempuri.org/dsGST.xsd" xmlns:mstns="http://tempuri.org/dsGST.xsd" xmlns="http://tempuri.org/dsGST.xsd" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" xmlns:msprop="urn:schemas-microsoft-com:xml-msprop" attributeFormDefault="qualified" elementFormDefault="qualified">
+  <xs:annotation>
+    <xs:appinfo source="urn:schemas-microsoft-com:xml-msdatasource">
+      <DataSource DefaultConnectionIndex="0" FunctionsComponentName="QueriesTableAdapter" Modifier="AutoLayout, AnsiClass, Class, Public" SchemaSerializationMode="IncludeSchema" xmlns="urn:schemas-microsoft-com:xml-msdatasource">
+        <Connections>
+          <Connection AppSettingsObjectName="Settings" AppSettingsPropertyName="FireworksConnectionString" ConnectionStringObject="" IsAppSettingsProperty="true" Modifier="Assembly" Name="FireworksConnectionString (Settings)" ParameterPrefix="@" PropertyReference="ApplicationSettings.FireWorks.Properties.Settings.GlobalReference.Default.FireworksConnectionString" Provider="System.Data.SqlClient" />
+        </Connections>
+        <Tables>
+          <TableAdapter BaseClass="System.ComponentModel.Component" DataAccessorModifier="AutoLayout, AnsiClass, Class, Public" DataAccessorName="FW_Invoice_ItemsTableAdapter" GeneratorDataComponentClassName="FW_Invoice_ItemsTableAdapter" Name="FW_Invoice_Items" UserDataComponentName="FW_Invoice_ItemsTableAdapter">
+            <MainSource>
+              <DbSource ConnectionRef="FireworksConnectionString (Settings)" DbObjectType="Unknown" FillMethodModifier="Public" FillMethodName="Fill" GenerateMethods="Both" GenerateShortCommands="false" GeneratorGetMethodName="GetData" GeneratorSourceName="Fill" GetMethodModifier="Public" GetMethodName="GetData" QueryType="Rowset" ScalarCallRetval="System.Object, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" UseOptimisticConcurrency="false" UserGetMethodName="GetData" UserSourceName="Fill">
+                <SelectCommand>
+                  <DbCommand CommandType="Text" ModifiedByUser="true">
+                    <CommandText>SELECT CONVERT(DECIMAL(10,2),SUM(Quantity * (ItemCost - (ItemCost * DiscountPercentage/100)))) Taxable,
+CONVERT(VARCHAR(20),BI.CGST) + ' %' CGST,CONVERT(DECIMAL(10,2),SUM(Quantity * (ItemCost - (ItemCost * DiscountPercentage/100)) * BI.CGST/100)) CGSTAmt,
+CONVERT(VARCHAR(20),BI.SGST) + ' %' SGST,CONVERT(DECIMAL(10,2),SUM(Quantity * (ItemCost - (ItemCost * DiscountPercentage/100)) * BI.SGST/100)) SGSTAmt,
+CONVERT(VARCHAR(20),BI.IGST) + ' %' IGST,CONVERT(DECIMAL(10,2),SUM(Quantity * (ItemCost - (ItemCost * DiscountPercentage/100)) * BI.IGST/100)) IGSTAmt,
+
+CONVERT(DECIMAL(10,2),SUM(Quantity * (ItemCost - (ItemCost * DiscountPercentage/100)) * BI.CGST/100)) +
+CONVERT(DECIMAL(10,2),SUM(Quantity * (ItemCost - (ItemCost * DiscountPercentage/100)) * BI.SGST/100)) +
+CONVERT(DECIMAL(10,2),SUM(Quantity * (ItemCost - (ItemCost * DiscountPercentage/100)) * BI.IGST/100)) Total
+	
+FROM FW_Invoice_Items BI
+INNER JOIN FW_Invoice B ON BI.BillId = B.BillId
+WHERE B.BillId = 10085
+GROUP BY BI.CGST,BI.SGST,BI.IGST</CommandText>
+                    <Parameters />
+                  </DbCommand>
+                </SelectCommand>
+              </DbSource>
+            </MainSource>
+            <Mappings>
+              <Mapping SourceColumn="Taxable" DataSetColumn="Taxable" />
+              <Mapping SourceColumn="CGSTAmt" DataSetColumn="CGSTAmt" />
+              <Mapping SourceColumn="SGSTAmt" DataSetColumn="SGSTAmt" />
+              <Mapping SourceColumn="IGSTAmt" DataSetColumn="IGSTAmt" />
+              <Mapping SourceColumn="CGST" DataSetColumn="CGST" />
+              <Mapping SourceColumn="SGST" DataSetColumn="SGST" />
+              <Mapping SourceColumn="IGST" DataSetColumn="IGST" />
+              <Mapping SourceColumn="Total" DataSetColumn="Total" />
+            </Mappings>
+            <Sources />
+          </TableAdapter>
+        </Tables>
+        <Sources />
+      </DataSource>
+    </xs:appinfo>
+  </xs:annotation>
+  <xs:element name="dsGST" msdata:IsDataSet="true" msdata:UseCurrentLocale="true" msprop:EnableTableAdapterManager="true" msprop:Generator_DataSetName="dsGST" msprop:Generator_UserDSName="dsGST">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="FW_Invoice_Items" msprop:Generator_TableClassName="FW_Invoice_ItemsDataTable" msprop:Generator_TableVarName="tableFW_Invoice_Items" msprop:Generator_RowChangedName="FW_Invoice_ItemsRowChanged" msprop:Generator_TablePropName="FW_Invoice_Items" msprop:Generator_RowDeletingName="FW_Invoice_ItemsRowDeleting" msprop:Generator_RowChangingName="FW_Invoice_ItemsRowChanging" msprop:Generator_RowEvHandlerName="FW_Invoice_ItemsRowChangeEventHandler" msprop:Generator_RowDeletedName="FW_Invoice_ItemsRowDeleted" msprop:Generator_RowClassName="FW_Invoice_ItemsRow" msprop:Generator_UserTableName="FW_Invoice_Items" msprop:Generator_RowEvArgName="FW_Invoice_ItemsRowChangeEvent">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Taxable" msdata:ReadOnly="true" msprop:Generator_ColumnVarNameInTable="columnTaxable" msprop:Generator_ColumnPropNameInRow="Taxable" msprop:Generator_ColumnPropNameInTable="TaxableColumn" msprop:Generator_UserColumnName="Taxable" type="xs:decimal" minOccurs="0" />
+              <xs:element name="CGSTAmt" msdata:ReadOnly="true" msprop:Generator_ColumnVarNameInTable="columnCGSTAmt" msprop:Generator_ColumnPropNameInRow="CGSTAmt" msprop:Generator_ColumnPropNameInTable="CGSTAmtColumn" msprop:Generator_UserColumnName="CGSTAmt" type="xs:decimal" minOccurs="0" />
+              <xs:element name="SGSTAmt" msdata:ReadOnly="true" msprop:Generator_ColumnVarNameInTable="columnSGSTAmt" msprop:Generator_ColumnPropNameInRow="SGSTAmt" msprop:Generator_ColumnPropNameInTable="SGSTAmtColumn" msprop:Generator_UserColumnName="SGSTAmt" type="xs:decimal" minOccurs="0" />
+              <xs:element name="IGSTAmt" msdata:ReadOnly="true" msprop:Generator_ColumnVarNameInTable="columnIGSTAmt" msprop:Generator_ColumnPropNameInRow="IGSTAmt" msprop:Generator_ColumnPropNameInTable="IGSTAmtColumn" msprop:Generator_UserColumnName="IGSTAmt" type="xs:decimal" minOccurs="0" />
+              <xs:element name="CGST" msdata:ReadOnly="true" msprop:Generator_ColumnVarNameInTable="columnCGST" msprop:Generator_ColumnPropNameInRow="CGST" msprop:Generator_ColumnPropNameInTable="CGSTColumn" msprop:Generator_UserColumnName="CGST" minOccurs="0">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="22" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="SGST" msdata:ReadOnly="true" msprop:Generator_ColumnVarNameInTable="columnSGST" msprop:Generator_ColumnPropNameInRow="SGST" msprop:Generator_ColumnPropNameInTable="SGSTColumn" msprop:Generator_UserColumnName="SGST" minOccurs="0">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="22" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="IGST" msdata:ReadOnly="true" msprop:Generator_ColumnVarNameInTable="columnIGST" msprop:Generator_ColumnPropNameInRow="IGST" msprop:Generator_ColumnPropNameInTable="IGSTColumn" msprop:Generator_UserColumnName="IGST" minOccurs="0">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="22" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="Total" msdata:ReadOnly="true" msprop:Generator_ColumnVarNameInTable="columnTotal" msprop:Generator_ColumnPropNameInRow="Total" msprop:Generator_ColumnPropNameInTable="TotalColumn" msprop:Generator_UserColumnName="Total" type="xs:decimal" minOccurs="0" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

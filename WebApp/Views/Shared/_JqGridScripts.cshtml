@@ -1,0 +1,25 @@
+@* Shared partial to include jqGrid assets and initializer.
+   Include this in any view that needs a jqGrid.
+   Note: jqGrid is served locally from wwwroot/lib/jqgrid to avoid CDN MIME type issues
+*@
+
+@* jQuery UI CSS *@
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css" asp-append-version="true" />
+
+@* jqGrid CSS - served locally *@
+<link rel="stylesheet" href="~/lib/jqgrid/ui.jqgrid.css" asp-append-version="true" />
+
+@* Custom theme overrides *@
+<link href="~/css/jqgrid-custom.css" rel="stylesheet" asp-append-version="true" />
+
+@* jQuery UI (required by jqGrid) *@
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js" asp-append-version="true"></script>
+
+@* jqGrid JS - served locally *@
+<script src="~/lib/jqgrid/jquery.jqGrid.js" asp-append-version="true"></script>
+
+@* jqGrid locale/formatter support *@
+<script src="~/lib/jqgrid/grid.locale-en.js" asp-append-version="true"></script>
+
+@* jqGrid initialization helper - must be after jqGrid library *@
+<script src="~/js/jqgrid-init.js" asp-append-version="true"></script>

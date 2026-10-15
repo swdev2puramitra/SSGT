@@ -1,0 +1,283 @@
+﻿@model List<WebApp.Models.PackingDto>
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Packing Dashboard";
+    int role=ViewBag.UserRole;
+}
+
+<div class="packing-dashboard">
+    <!-- Header Section with Print Option -->
+    <div class="dashboard-header">
+        <div class="header-top">
+            <h3 class="mb-0">Packing Details</h3>
+            <button type="button" id="printBtn" class="btn btn-print hidden-print" title="Print packing details">
+                <i class="fas fa-print"></i> Print
+            </button>
+        </div>
+        <div class="bill-info">
+            <div class="bill-no">
+                <span class="label">Bill No:</span>
+                <span class="value">@ViewBag.BillNo</span>
+            </div>
+            <div class="bill-name">
+                <span class="label">Name:</span>
+                <span class="value">@ViewBag.CustomerName</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Packing Items Grouped by Godown -->
+    @if (Model != null && Model.Any())
+    {
+        var godownGroups = Model.GroupBy(x => x.GodownDescription).Select(g => new
+        {
+            GodownId = g.First().GodownId,
+            GodownDescription = g.Key,
+            TotalAllocatedCases = g.Sum(x => x.AllocatedNoOfCases),
+            Items = g.Select(x => new
+            {
+                x.SlNo,
+                x.ItemName,
+                x.AllocatedStockPosition,
+                        x.StockDescription,
+                        DispatchStock = x.DispatchStockDescription,
+                x.GodownStock,
+                x.BillId,
+                x.ItemId,
+                x.GodownId,
+                x.AllocatedQty,
+                x.AllocatedNoOfCases,
+                x.BillQty,
+                x.TotalDispatchedQty,
+                x.RemainingQty,
+                x.DispatchQty,
+                x.IsPacked
+            }).ToList()
+        }).OrderBy(g => g.GodownDescription);
+
+        <div class="godowns-grid">
+            @foreach (var godown in godownGroups)
+            {
+                var godownRows = godown.Items.OrderBy(x => x.ItemName).Select(item => new
+                {
+                    item.SlNo,
+                    item.ItemName,
+                        Stock = item.StockDescription,
+                        DispatchStock = item.DispatchStock,
+                    item.GodownStock,
+                    item.BillId,
+                    item.ItemId,
+                    item.GodownId,
+                    item.AllocatedQty,
+                    item.DispatchQty,
+                    item.RemainingQty,
+                    item.TotalDispatchedQty,
+                    item.IsPacked
+                }).ToList();
+                var gridId = $"packing-grid-{godown.GodownId}";
+                <div class="godown-section">
+                    <div class="godown-header">
+                        <h4 class="m-0">@godown.GodownDescription</h4>
+                        <span class="case-count">
+                            Allocated: @godown.Items.Sum(x => x.AllocatedQty) |
+                            Dispatched: @godown.Items.Sum(x => x.TotalDispatchedQty) |
+                            Remaining: @godown.Items.Sum(x => x.RemainingQty)
+                        </span>
+                    </div>
+                    <div id="@gridId" class="packing-tabulator-grid"
+                         data-role="@role"
+                         data-rows='@Html.Raw(JsonSerializer.Serialize(godownRows))'></div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning mt-3">
+            <i class="fas fa-info-circle"></i>
+            <span>No packing data available for this bill.</span>
+        </div>
+    }
+
+    <!-- Action Buttons -->
+    <div class="packing-actions hidden-print">
+@if(role!=1){
+        <button type="button" class="btn btn-primary" id="dispatchBtn">
+            <i class="fas fa-check"></i> Confirm Dispatch
+        </button>
+}
+        <a href="@Url.Action("ViewBills", "Home")" class="btn btn-secondary">
+            <i class="fas fa-times"></i> Cancel
+        </a>
+    </div>
+</div>
+
+@await Html.PartialAsync("_TabulatorScripts")
+
+@section Scripts {
+    <script>
+        const billId = @ViewBag.BillId;
+
+        function updateGodownSummary(gridElement, table) {
+            const rows = table.getData();
+            const allocated = rows.reduce((sum, row) => sum + (Number(row.AllocatedQty) || 0), 0);
+            const dispatched = rows.reduce((sum, row) => sum + (Number(row.TotalDispatchedQty) || 0) + (Number(row.DispatchQty) || 0), 0);
+            const remaining = rows.reduce((sum, row) => sum + Math.max(0, (Number(row.AllocatedQty) || 0) - (Number(row.TotalDispatchedQty) || 0) - (Number(row.DispatchQty) || 0)), 0);
+            const summary = gridElement.closest('.godown-section').querySelector('.case-count');
+            summary.textContent = `Allocated: ${allocated} | Dispatched: ${dispatched} | Remaining: ${remaining}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.packing-tabulator-grid').forEach(function (gridElement) {
+                const rows = JSON.parse(gridElement.dataset.rows || '[]');
+                const table = new Tabulator(gridElement, {
+                    data: rows,
+                    layout: 'fitColumns',
+                    responsiveLayout: 'hide',
+                    columnCalcs: 'bottom',
+                    columns: [
+                        { title: 'Sl', field: 'SlNo', hozAlign: 'center', width: 60 },
+                        { title: 'Item Name', field: 'ItemName', widthGrow: 2 },
+                        { title: 'Details', field: 'Stock', widthGrow: 1, hozAlign: 'left' },
+                        { title: 'Allocated', field: 'AllocatedQty', hozAlign: 'right', bottomCalc: 'sum' },
+                        {
+                            title: 'Dispatch', field: 'DispatchQty', hozAlign: 'right', bottomCalc: 'sum',
+                            editor: @role == 1 ? false : 'number',
+                            editable: function (cell) {
+                                const row = cell.getRow().getData();
+                                return @role != 1 && (Number(row.RemainingQty) || 0) > 0;
+                            },
+                            editorParams: { min: 0 },
+                            validator: ['integer', 'min:0'],
+                            cellEdited: function (cell) {
+                                const row = cell.getRow().getData();
+                                const max = Math.max(0, (Number(row.AllocatedQty) || 0) - (Number(row.TotalDispatchedQty) || 0));
+                                const value = Math.max(0, Math.min(Number(cell.getValue()) || 0, max));
+                                if (value !== Number(cell.getValue())) {
+                                    cell.setValue(value, true);
+                                }
+                                cell.getRow().update({ RemainingQty: max - value });
+                                    updateDispatchStock(cell.getRow(), value);
+                                updateGodownSummary(gridElement, table);
+                            }
+                        },
+                            { title: 'Dispatch Details', field: 'DispatchStock', widthGrow: 1, hozAlign: 'left' },
+                        {
+                            title: 'Remaining', field: 'RemainingQty', hozAlign: 'right', bottomCalc: 'sum',
+                            formatter: function (cell) {
+                                const row = cell.getRow().getData();
+                                const allocated = Number(row.AllocatedQty) || 0;
+                                const totalDispatched = Number(row.TotalDispatchedQty) || 0;
+                                // Treat blank or null dispatch values as 0 to keep formatter compatible with empty inputs
+                                const dispatchQty = (row.DispatchQty === '' || row.DispatchQty == null) ? 0 : (Number(row.DispatchQty) || 0);
+                                return Math.max(0, allocated - totalDispatched - dispatchQty);
+                            }
+                        },
+                        { title: 'Total Dispatched', field: 'TotalDispatchedQty', hozAlign: 'right' }
+                    ]
+                });
+                gridElement._packingTable = table;
+                updateGodownSummary(gridElement, table);
+            });
+
+            // Initialize Bootstrap tooltips for packing info icons
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl, {
+                    html: true,
+                    placement: 'top'
+                });
+            });
+        });
+
+        // Print functionality - excludes navbar
+        document.getElementById('printBtn').addEventListener('click', function() {
+            window.print();
+        });
+
+            function updateDispatchStock(row, quantity) {
+                const data = row.getData();
+                const url = '@Url.Action("GetItemStockDesc", "Reports")'
+                    + `?itemId=${encodeURIComponent(data.ItemId)}&quantity=${encodeURIComponent(quantity)}`;
+
+                fetch(url)
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            row.update({ DispatchStock: result.data || '' });
+                        }
+                    })
+                    .catch(error => console.error('Error fetching dispatch stock details:', error));
+            }
+
+        document.getElementById('dispatchBtn').addEventListener('click', function() {
+            const packedItems = [];
+            let validationMessage = null;
+            // Track per-item dispatch totals (by ItemId + BillId + GodownId) to preserve input behavior
+            // even when server-side grouping removes duplicate rows.
+            const itemDispatchTotals = {};
+            document.querySelectorAll('.packing-tabulator-grid').forEach(function (gridElement) {
+                const table = gridElement._packingTable;
+                table.getData().forEach(function (row) {
+                    const dispatchQty = Number(row.DispatchQty) || 0;
+                    const allocated = Number(row.AllocatedQty) || 0;
+                    const totalDispatched = Number(row.TotalDispatchedQty) || 0;
+                    const remainingQty = Math.max(0, allocated - totalDispatched);
+                    // Composite key ensures uniqueness per item/bill/godown when aggregating inputs
+                    const itemKey = `${row.ItemId}_${row.BillId}_${row.GodownId}`;
+                    const prev = Number(itemDispatchTotals[itemKey]) || 0;
+                    const newTotal = prev + dispatchQty;
+                    if (dispatchQty < 0 || newTotal > remainingQty) {
+                        validationMessage = 'Dispatch quantity cannot exceed the remaining allocation.';
+                        return;
+                    }
+                    if (dispatchQty > 0) {
+                        itemDispatchTotals[itemKey] = newTotal;
+                        packedItems.push({
+                            itemId: row.ItemId,
+                            billId: row.BillId,
+                            godownId: row.GodownId,
+                            dispatchQty: dispatchQty
+                        });
+                    }
+                });
+            });
+
+            if (validationMessage) {
+                alert(validationMessage);
+                return;
+            }
+
+            if (packedItems.length === 0) {
+                alert('Enter at least one positive dispatch quantity.');
+                return;
+            }
+
+            if (confirm('Are you sure you want to confirm dispatch for this bill?')) {
+                fetch('@Url.Action("UpdateDispatchStatus", "Reports")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        billId: billId,
+                        packedItems: packedItems
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Dispatch confirmed successfully');
+                            window.location.href = '@Url.Action("ViewBills", "Home")';
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert(error.message || 'An error occurred while updating dispatch status');
+                    });
+            }
+        });
+    </script>
+}

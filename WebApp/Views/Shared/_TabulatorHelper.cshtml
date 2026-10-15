@@ -1,0 +1,80 @@
+@* Partial helper for initializing a Tabulator grid.
+   Expects window.TABULATOR_CONFIG and window.TABULATOR_COLUMNS to be defined by the calling view.
+   Uses global TabulatorHelper.createTabulator (wwwroot/js/tabulator-init.js) to create the grid.
+*@
+<script>
+    (function(){
+        function getFilterParams(){
+            var fdEl = document.getElementById('createdDate');
+            var fd = fdEl ? fdEl.value : null;
+            return {
+                createdDate: fd || null,
+                name: (document.getElementById('name') || {}).value || null,
+                billNo: (document.getElementById('billNo') || {}).value || null,
+                mobileNo: (document.getElementById('mobileNo') || {}).value || null,
+                customerType: (document.getElementById('customerType') || {}).value || null,
+                isEstimate: (document.getElementById('isEstimate') || {}).value || null
+            };
+        }
+
+        function init(){
+            var cfg = window.TABULATOR_CONFIG || {};
+            var cols = window.TABULATOR_COLUMNS || [];
+            var selector = cfg.selector || '#billsGrid';
+            var ajaxUrl = cfg.ajaxUrl || null;
+            var pageSize = cfg.pageSize || 10;
+            var initialData = cfg.initialData || [];
+            var totalCount = cfg.totalCount || 0;
+
+            var options = {
+                columns: cols,
+                pagination: 'remote',
+                paginationSize: pageSize,
+                ajaxURL: ajaxUrl,
+                ajaxConfig: 'GET',
+                ajaxParams: getFilterParams,
+                paginationDataSent: { page: 'page', pageSize: 'pageSize' },
+                paginationDataReceived: { data: 'data', last_page: 'totalPages', page: 'page' },
+                placeholder: 'No records found',
+                layoutColumnsOnNewData: true,
+                ajaxResponse: function(url, params, response){
+                    if(response && response.total !== undefined){
+                        var el = document.getElementById('resultsInfo');
+                        if(el) el.innerHTML = 'Found <strong>' + response.total + '</strong> bill(s)';
+                    }
+                    return (response && response.data) ? response.data : [];
+                },
+                ajaxError: function(xhr, status, err){ console.error('Tabulator AJAX error', status, err); }
+            };
+
+            // Create the grid via shared TabulatorHelper
+            TabulatorHelper.createTabulator(selector, options).then(function(table){
+                // expose grid for debugging/interaction
+                window._tabulator_table = table;
+
+                // If initial data provided by server, load it immediately
+                try{
+                    if(initialData && initialData.length > 0){
+                        table.setData(initialData);
+                        var el = document.getElementById('resultsInfo');
+                        if(el) el.innerHTML = 'Found <strong>' + totalCount + '</strong> bill(s)';
+                    }
+                }catch(e){ console.error('Error applying initial data to tabulator', e); }
+
+                // Wire search form to reload remote data
+                var filterForm = document.querySelector('.filter-form');
+                if(filterForm){
+                    filterForm.addEventListener('submit', function(e){
+                        e.preventDefault();
+                        table.setData(ajaxUrl, getFilterParams());
+                    });
+                }
+
+                // Note: page-specific action handlers (print/edit/dispatch) should be implemented by each view.
+                // This shared helper only initializes the Tabulator instance and exposes it as window._tabulator_table.
+            }).catch(function(err){ console.error('Failed to initialize tabulator', err); });
+        }
+
+        if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+    })();
+</script>

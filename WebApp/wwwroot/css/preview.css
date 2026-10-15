@@ -1,0 +1,5 @@
+/* Preview window styles for generating preview popup */
+body{font-family:Segoe UI,Arial,sans-serif;padding:24px;color:#333}
+.box{display:flex;align-items:center;gap:12px}
+.spinner{width:28px;height:28px;border-radius:50%;background:#3498db;display:inline-block}
+.msg{font-size:14px}

@@ -1,0 +1,1790 @@
+@{
+    ViewData["Title"] = "Billing";
+    var godowns = ViewBag.Godowns as List<WebApp.Models.FwMasterGodown> ?? new List<WebApp.Models.FwMasterGodown>();
+}
+
+<div class="container-fluid mt-0 mb-1">
+    <div class="dashboard-header">
+        <h3>Billing</h3>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-12">
+            <div class="card mb-2">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label>Customer Type</label>
+                                    <select id="customerType" class="form-control">
+                                        <option value="">-- Select Customer Type --</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label>Mobile</label>
+                                    <input id="mobile" type="tel" class="form-control" placeholder="Enter mobile number" maxlength="10" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')" />
+                                    <input type="hidden" id="customerId" value="0" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label>WhatsApp</label>
+                                    <input id="mobile2" type="tel" class="form-control" placeholder="Enter whatsapp number (optional)" maxlength="10" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')" />
+                                </div>
+                                <div class="col-md-8">
+                                    <label>Customer Name</label>
+                                    <input id="customerName" class="form-control" placeholder="Enter customer name" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label>Address</label>
+                            <textarea id="address" class="form-control min-h-85" placeholder="Enter address"></textarea>
+                        </div>
+                    </div>
+                    <div class="row my-2">
+                        <div class="col-md-3">
+                            <label for="itemSearch">Item Code / Name</label>
+                            <input id="itemSearch" class="form-control" placeholder="Search by item code or name" autocomplete="off" />
+                            <input id="itemCode" type="hidden" />
+                            <input id="itemName" type="hidden" />
+                        </div>
+                        <div class="col-md-2">
+                            <label>Item Type</label>
+                            <select id="itemType" class="form-control"><option value="0">-- Select Type --</option></select>
+                        </div>
+                        <div class="col-md-2">
+                            <label>Quantity</label>
+                            <input id="itemQty" type="number" step="1" min="1" value="" class="form-control" placeholder="Qty" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
+                        </div>
+                        <div class="col-md-2">
+                            <label>Cost</label>
+                            <input id="itemCost" type="number" step="0.01" min="0" class="form-control" placeholder="Individual price"
+                                   oninput="this.value=this.value.replace(/[^0-9.]/g,''); var parts=this.value.split('.'); if(parts.length>2) this.value=parts[0]+'.'+parts.slice(1).join(''); if(parts[1]) parts[1]=parts[1].slice(0,2); this.value=parts.join('.')" />
+                        </div>
+                        <div class="col-md-2">
+                            <label>Total</label>
+                            <input id="itemTotal" type="number" step="0.01" class="form-control text-light" readonly value="0.00" />
+                        </div>
+                        <div class="col-md-1 align-self-end">
+                            <button id="addItemBtn" class="btn btn-primary">Add</button>
+                        </div>
+                    </div>
+                    <div class="tabulator-wrapper">
+                        <div id="itemsTable"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls placed below the items grid -->
+    <div class="row mt-2">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row mt-3">
+                        <div class="col-md-3">
+                            <label class="d-block">Print Size</label>
+                            <div>
+                                <label class="form-check-inline mr-3"><input class="form-check-input" type="radio" name="printSize" id="A4" value="A4" checked /> A4</label>
+                                <label class="form-check-inline"><input class="form-check-input" type="radio" name="printSize" id="Thermal" value="Thermal" /> Thermal</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="d-block">Type</label>
+                            <div>
+                                <label class="form-check-inline mr-3"><input class="form-check-input" type="radio" name="isEstimate" id="estimateRadio" value="estimate" checked /> Estimate</label>
+                                <label class="form-check-inline"><input class="form-check-input" type="radio" name="isEstimate" id="invoiceRadio" value="invoice" /> Invoice</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Bill Amount</label>
+                                <input id="billAmount" type="number" step="0.01" class="form-control text-light" readonly value="0" placeholder="0.00" />
+                            </div>
+                        </div>
+                        <!-- AmountPaid/Balance moved below invoice details -->
+                        <div class="col-md-3">
+                            <div class="form-group d-none">
+                                <label>Discount per Item (%)</label>
+                                <input id="discountPerItem" type="number" step="0.01" min="0" max="100" class="form-control" placeholder="0.00"
+                                       oninput="this.value=this.value.replace(/[^0-9.]/g,''); var parts=this.value.split('.'); if(parts.length>2) this.value=parts[0]+'.'+parts.slice(1).join(''); if(parts[1]) parts[1]=parts[1].slice(0,2); this.value=parts.join('.'); if(Number(this.value)>100) this.value='100';" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-2">
+                        <div class="col-12">
+                            <fieldset id="invoiceDetailsFieldset" class="border p-2 d-none">
+                                <legend class="w-auto">Invoice Details</legend>
+                                <!-- 4 columns layout: two rows of 4 cols -->
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label>Discount Percentage</label>
+                                        <input id="discountPercentage" type="number" step="0.01" min="0" max="100" class="form-control" placeholder="Discount percentage"
+                                               oninput="this.value=this.value.replace(/[^0-9.]/g,''); var parts=this.value.split('.'); if(parts.length>2) this.value=parts[0]+'.'+parts.slice(1).join(''); if(parts[1]) parts[1]=parts[1].slice(0,2); this.value=parts.join('.')" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label>Taxable Amount</label>
+                                        <input id="taxableAmount" type="number" step="0.01" class="form-control text-light" readonly value="0" placeholder="0.00" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label>With/Out of State</label>
+                                        <div class="d-flex align-items-center">
+                                            <label class="mr-3 mb-0"><input type="radio" name="stateType" value="in" checked class="mr-1" /> In State</label>
+                                            <label class="mb-0"><input type="radio" name="stateType" value="out" class="mr-1" /> Out of State</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label>Invoice No</label>
+                                        <input id="invoiceNo" class="form-control" placeholder="Invoice no" />
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-3">
+                                        <label>CGST</label>
+                                        <input id="cgst" type="number" step="0.01" class="form-control text-light" readonly value="0" placeholder="0.00" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label>SGST</label>
+                                        <input id="sgst" type="number" step="0.01" class="form-control text-light" readonly value="0" placeholder="0.00" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label>IGST</label>
+                                        <input id="igst" type="number" step="0.01" class="form-control text-light" readonly value="0" placeholder="0.00" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label>Pincode</label>
+                                        <input id="pincode" class="form-control" placeholder="Pincode" />
+                                    </div>
+                                </div>
+
+                                <div class="row mt-2">
+                                    <div class="col-md-3">
+                                        <label>POS</label>
+                                        <input id="pos" class="form-control" placeholder="POS" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label>State Code</label>
+                                        <input id="stateCode" class="form-control" placeholder="State Code" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label>Location</label>
+                                        <input id="loc" class="form-control" placeholder="Location" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label>Customer GSTIN</label>
+                                        <input id="customerGstin" class="form-control" placeholder="Enter customer GSTIN (optional)" maxlength="15" />
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-3">
+                                        <label for="vehicleNo">Vehicle No</label>
+                                        <input id="vehicleNo" class="form-control" placeholder="Vehicle No" maxlength="10" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="ownerName">Owner Name</label>
+                                        <input id="ownerName" class="form-control" placeholder="Owner Name" maxlength="100" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="eWayBillNo">EWay Bill No</label>
+                                        <input id="eWayBillNo" class="form-control" placeholder="EWay Bill No" maxlength="50" />
+                                    </div>
+                                </div>
+                            </fieldset>
+                            <!-- Amount Paid and Balance placed here as requested -->
+                            <div class="row mt-2">
+                                <div class="col-md-3">
+                                    <label>Amount Paid</label>
+                                    <input id="amountPaid" type="number" step="0.01" min="0" class="form-control" value="0"
+                                           oninput="this.value=this.value.replace(/[^0-9.]/g,''); var parts=this.value.split('.'); if(parts.length>2) this.value=parts[0]+'.'+parts.slice(1).join(''); if(parts[1]) parts[1]=parts[1].slice(0,2); this.value=parts.join('.')" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Balance Amount</label>
+                                    <input id="balanceAmount" type="number" step="0.01" class="form-control text-light" readonly value="0" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label>Total Bill Amount</label>
+                                    <input id="totalBillAmount" type="number" step="0.01" class="form-control text-light" readonly value="0" />
+                                </div>
+                            </div>
+
+                            <div class="text-right mt-2">
+                                <button id="generateInvoice" class="btn btn-success">Generate Estimate</button>
+                                <button id="clearForm" class="btn btn-danger">Clear</button>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="billId" value="" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+@section Scripts {
+    @await Html.PartialAsync("~/Views/Shared/_TabulatorScripts.cshtml")
+
+    <script type="application/json" id="serverEditPayloadData">@Html.Raw(ViewBag.EditJson ?? "null")</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // initialize Tabulator for items
+            var container = document.getElementById('itemsTable');
+            // TabulatorHelper.createTabulator returns a Promise that resolves to the grid instance
+            var tablePromise = TabulatorHelper.createTabulator('#itemsTable', {
+                data: [],
+                layout: 'fitColumns',
+                pagination: false,
+                placeholder: 'No items added',
+                columns: [
+                    // Use the slNo field (assigned when rows are added) so top-inserted items show their sequence number
+                    { title: 'Sl No.', field: 'slNo', width: 60, headerSort: false, hozAlign: 'left', formatter: function(cell) { try { return (cell.getValue() || ''); } catch (e) { return ''; } } },
+                    // hidden ids and tax rates required for saving and editing
+                    { title: 'ItemId', field: 'itemId', visible: false },
+                    { title: 'ItemTypeId', field: 'itemTypeId', visible: false },
+                    { title: 'CGST', field: 'cgst', visible: false },
+                    { title: 'SGST', field: 'sgst', visible: false },
+                    { title: 'IGST', field: 'igst', visible: false },
+                    // Tracing fields required for correct server-side mapping and PDF generation
+                    { title: 'OriginalCost', field: 'originalCost', visible: false },
+                    { title: 'ChangedPrice', field: 'changedPrice', visible: false },
+                    { title: 'IsPriceModified', field: 'isPriceModified', visible: false },
+                    { title: 'DisplayPrice', field: 'displayPrice', visible: false },
+                    { title: 'QtyPerType', field: 'qtyPerType', visible: false },
+                    // computed effective price per TYPE unit after price changes and discount (hidden)
+                    {
+                        title: 'ItemCostFinal', field: 'itemCostFinal', visible: false, mutator: function(value, data) {
+                            try {
+                                var qtyPerType = Number(data.qtyPerType || 1) || 1;
+                                var pricePerType = (Number(data.itemPrice || 0) || 0) * qtyPerType;
+                                return Number(getEffectivePricePerType(pricePerType)).toFixed(2);
+                            } catch (e) { return (Number(value || 0)).toFixed(2); }
+                        }
+                    },
+                    { title: 'Item Code', field: 'itemCode', width: 110, editable: false, headerSort: false },
+                    { title: 'Item Name', field: 'itemName', width: 250, editable: false, headerSort: false },
+                    { title: 'Item Type', field: 'itemTypeName', width: 110, editable: false, headerSort: false },
+                    { title: 'Detailed', field: 'detailed', width: 150, editable: false, headerSort: false },
+                    // store quantity in the grid as lowest-level/base units (not per-type units)
+                    {
+                        title: 'Quantity', field: 'quantity', width: 100, headerSort: false,
+                        editable: function(cell) { return !(cell.getRow().getData() || {}).isPacked; },
+                        editor: 'number', editorParams: { min: 1, step: 1 },
+                        validator: function(cell, value) { return Number.isInteger(Number(value)) && Number(value) >= 1; },
+                        formatter: function(cell) { var d = cell.getData(); return (Number(d.quantity || 0)).toString(); }, hozAlign: 'right',
+                         cellEdited: function(cell) {
+                             recalcTotals();
+                             refreshItemDetail(cell.getRow());
+                         }
+                    },
+                    {
+                        title: 'Individual cost', field: 'itemPrice', width: 120, headerSort: false,
+                        editable: function(cell) { return !(cell.getRow().getData() || {}).isPacked; },
+                        editor: 'number', editorParams: { min: 0, step: 0.01 },
+                        validator: function(cell, value) { return isFinite(Number(value)) && Number(value) >= 0; },
+                        cellEdited: function(cell) {
+                            var itemPrice = Number(cell.getValue());
+                            cell.getRow().update({ changedPrice: itemPrice, isPriceModified: true });
+                            recalcTotals();
+                        },
+                        formatter: function(cell) {
+                            try {
+                                var data = cell.getData() || {};
+                                 return '<span class="text-light">' + Number(data.itemPrice || 0).toFixed(2) + '</span>';
+                            } catch (e) { return (Number(cell.getValue() || 0)).toFixed(2); }
+                        }, hozAlign: 'right'
+                    },
+                    {
+                        title: 'Total Cost', field: 'totalCost', mutator: function(value, data) {
+                            try {
+                                 var total = Number(data.quantity || 0) * Number(data.itemPrice || 0);
+                                return total.toFixed(2);
+                            } catch (e) { return '0.00'; }
+                        }, formatter: function(cell) { try { return '<span class="text-light">' + (cell.getValue() || '0.00') + '</span>'; } catch (e) { return (cell.getValue() || '0.00'); } }, width: 120, headerSort: false, hozAlign: 'right'
+                    },
+                    {
+                        title: 'Delete', formatter: function(cell) {
+                            try {
+                                var data = (cell && cell.getRow && cell.getRow().getData) ? cell.getRow().getData() : {};
+                                if (data && data.isPacked === true) {
+                                    // render a disabled control for packed rows
+                                    return '<button class="btn btn-sm btn-danger" disabled title="Packed items cannot be deleted">Del</button>';
+                                }
+                            } catch (e) { }
+                            return '<button class="btn btn-sm btn-danger">Del</button>';
+                        }, width: 80, cellClick: function(e, cell) {
+                            try {
+                                var data = (cell && cell.getRow && cell.getRow().getData) ? cell.getRow().getData() : {};
+                                if (data && data.isPacked === true) {
+                                    try {
+                                        var nm = (data.itemName || data.itemCode) ? (data.itemName || data.itemCode) : 'item';
+                                        showMessage('Packed item "' + nm + '" cannot be deleted. Unpack the item before making changes.');
+                                    } catch (ex) { alert('Packed items cannot be deleted.'); }
+                                    return;
+                                }
+                            } catch (e) { }
+                            try { cell.getRow().delete(); recalcTotals(); } catch (e) { }
+                        }, headerSort: false, hozAlign: 'center'
+                    }
+                ]
+            });
+
+            // Server-provided edit payload (if any) is emitted into a separate script tag with type=application/json
+            var serverEditPayload = null;
+            try {
+                var payloadElem = document.getElementById('serverEditPayloadData');
+                if (payloadElem && payloadElem.textContent) {
+                    serverEditPayload = JSON.parse(payloadElem.textContent);
+                }
+            } catch (e) { serverEditPayload = null; }
+            var serverEditPayloadApplied = false;
+
+            // Load customer types from server and populate select
+            (function loadCustomerTypes() {
+                try {
+                    var url = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Url.Action("GetCustomerTypes", "Billing")));
+                    fetch(url).then(function(r) { return r.json(); }).then(function(resp) {
+                        try {
+                            if (resp && resp.success && Array.isArray(resp.data)) {
+                                var sel = document.getElementById('customerType');
+                                // clear existing but keep first placeholder
+                                while (sel.options.length > 1) sel.remove(1);
+                                resp.data.forEach(function(item) {
+                                    try {
+                                        var opt = document.createElement('option');
+                                        opt.value = item.id;
+                                        opt.text = item.name;
+                                        sel.appendChild(opt);
+                                    } catch (e) { }
+                                });
+                                // if server payload present, set selected value after options loaded and lock it (disable)
+                                try {
+                                    if (serverEditPayload && serverEditPayload.header && serverEditPayload.header.customerType) {
+                                        sel.value = serverEditPayload.header.customerType;
+                                        // once selected from payload (editing existing bill), do not allow change
+                                        sel.disabled = true;
+                                    }
+                                } catch (e) { }
+                            }
+                        } catch (e) { }
+                    }).catch(function() { /* ignore load error */ });
+                } catch (e) { }
+            })();
+
+            // Once the user selects a customer type, lock (disable) the dropdown until save or clear
+            try {
+                var custTypeEl = document.getElementById('customerType');
+                if (custTypeEl) {
+                    custTypeEl.addEventListener('change', function() {
+                        try {
+                            var v = (this.value || '').toString().trim();
+                            if (v !== '') this.disabled = true;
+                        } catch (e) { }
+                    });
+                }
+            } catch (e) { }
+
+            // If payload present, populate form and table after Tabulator initialized
+            if (serverEditPayload) {
+                console.log('serverEditPayload',serverEditPayload)
+                try {
+                    // set header fields
+                    try { document.getElementById('billId').value = (serverEditPayload.header && serverEditPayload.header.billId) ? serverEditPayload.header.billId : '0'; } catch (e) { }
+                    try { document.getElementById('customerName').value = serverEditPayload.header.name || ''; } catch (e) { }
+                    try { document.getElementById('address').value = serverEditPayload.header.custAddress || ''; } catch (e) { }
+                    try { document.getElementById('mobile').value = serverEditPayload.header.mobileNo || ''; } catch (e) { }
+                    try { if (serverEditPayload.header.mobile2 !== undefined) document.getElementById('mobile2').value = serverEditPayload.header.mobile2 || ''; } catch (e) { }
+                    try { if (serverEditPayload.header.mobile2 !== undefined) document.getElementById('mobile2').value = serverEditPayload.header.mobile2 || ''; } catch (e) { }
+                    try { document.getElementById('customerType').value = serverEditPayload.header.customerType || ''; } catch (e) { }
+                    try { document.getElementById('discountPerItem').value = serverEditPayload.header.discountPerItem || '0'; } catch (e) { }
+                    try { document.getElementById('discountPercentage').value = serverEditPayload.header.discountPercentage || '0'; } catch (e) { }
+                    try { document.getElementById('billAmount').value = serverEditPayload.header.billAmount || '0'; } catch (e) { }
+                    try { document.getElementById('amountPaid').value = serverEditPayload.header.amountPaid || '0'; } catch (e) { }
+                    try { document.getElementById('balanceAmount').value = serverEditPayload.header.balanceAmount || '0'; } catch (e) { }
+                    // invoice-specific
+                    try { if (serverEditPayload.header.invoiceNo) document.getElementById('invoiceNo').value = serverEditPayload.header.invoiceNo || ''; } catch (e) { }
+                    try { if (serverEditPayload.header.pos) document.getElementById('pos').value = serverEditPayload.header.pos || ''; } catch (e) { }
+                    try { if (serverEditPayload.header.stateCode) document.getElementById('stateCode').value = serverEditPayload.header.stateCode || ''; } catch (e) { }
+                    try { if (serverEditPayload.header.pincode) document.getElementById('pincode').value = serverEditPayload.header.pincode || ''; } catch (e) { }
+                    try { if (serverEditPayload.header.loc) document.getElementById('loc').value = serverEditPayload.header.loc || ''; } catch (e) { }
+                     try { document.getElementById('vehicleNo').value = serverEditPayload.header.vehicleNo || ''; } catch (e) { }
+                     try { document.getElementById('ownerName').value = serverEditPayload.header.ownerName || ''; } catch (e) { }
+                     try { document.getElementById('eWayBillNo').value = serverEditPayload.header.eWayBillNo || ''; } catch (e) { }
+
+                    // set estimate/invoice radio once from server payload
+                    try {
+                        if (serverEditPayload && serverEditPayload.header) {
+                            var hdrIsEstimate = !!serverEditPayload.header.isEstimate;
+                            var estimateEl = document.getElementById('estimateRadio');
+                            var invoiceEl = document.getElementById('invoiceRadio');
+                            if (hdrIsEstimate) {
+                                estimateEl.checked = true;
+                                invoiceEl.checked = false;
+                                // allow switching when this is an estimate
+                                estimateEl.disabled = false;
+                                invoiceEl.disabled = false;
+                            } else {
+                                // this record is an invoice: select invoice and prevent switching back to estimate
+                                invoiceEl.checked = true;
+                                estimateEl.checked = false;
+                                estimateEl.disabled = true;
+                                // ensure invoice radio remains enabled so user can view invoice state
+                                invoiceEl.disabled = false;
+                            }
+                            // If server payload contains in-state flag, set stateType radio accordingly (important for out-of-state invoices)
+                            try {
+                                if (typeof serverEditPayload.header.isInState !== 'undefined' && serverEditPayload.header.isInState !== null) {
+                                    var stVal = serverEditPayload.header.isInState ? 'in' : 'out';
+                                    try { document.querySelector('input[name="stateType"][value="' + stVal + '"]').checked = true; } catch (e) { }
+                                }
+                            } catch (e) { }
+                            serverEditPayloadApplied = true; // mark applied so toggleInvoiceDetails won't override user changes later
+                        }
+                    } catch (e) { }
+
+                    // populate rows
+                    if (serverEditPayload.items && serverEditPayload.items.length > 0) {
+                        tablePromise.then(function(t) {
+                            try {
+                                var rowsToAdd = [];
+                                serverEditPayload.items.forEach(function(it) {
+                                    try {
+                                        // compute display amounts for taxes while preserving percent values for persistence
+                                        var qtyPerTypeRow = it.qtyPerType || 1;
+                                         var taxableRow = Number(it.quantity || 0) * Number(it.itemPrice || 0);
+                                        // Always preserve and use percentage values for taxes (do not store absolute amounts in the grid)
+                                        var cgstPercentRow = (it.cgst !== undefined && it.cgst !== null) ? Number(it.cgst) : 0;
+                                        var sgstPercentRow = (it.sgst !== undefined && it.sgst !== null) ? Number(it.sgst) : 0;
+                                        var igstPercentRow = (it.igst !== undefined && it.igst !== null) ? Number(it.igst) : 0;
+
+                                        rowsToAdd.push({
+                                            slNo: it.slNo || 0,
+                                            billId: it.billId || 0,
+                                            itemId: it.itemId || 0,
+                                            itemCode: it.itemCode || '',
+                                            itemName: it.itemName || '',
+                                            itemTypeId: it.itemTypeId || 0,
+                                            itemTypeName: it.itemTypeName || it.itemType || '',
+                                            detailed: it.detailed || '',
+                                            quantity: it.quantity || 0,
+                                            qtyPerType: it.qtyPerType || 1,
+                                            itemPrice: it.itemPrice || it.originalCost || 0,
+                                             itemCost: it.itemPrice || it.originalCost || 0,
+                                            displayPrice: (it.itemPrice && it.qtyPerType) ? (it.itemPrice * it.qtyPerType) : (it.totalCost || 0),
+                                            totalCost: it.totalCost || 0,
+                                            // always store percentages in the row object; do not persist absolute tax amounts
+                                            cgst: cgstPercentRow || 0,
+                                            sgst: sgstPercentRow || 0,
+                                            igst: igstPercentRow || 0,
+                                            // preserve explicit percent fields as well for clarity
+                                            cgstPercent: cgstPercentRow || 0,
+                                            sgstPercent: sgstPercentRow || 0,
+                                            igstPercent: igstPercentRow || 0,
+                                            changedPrice: (it.changedPrice !== undefined && it.changedPrice !== null) ? Number(it.changedPrice) : null,
+                                            isPriceModified: (it.isPriceModified !== undefined && it.isPriceModified !== null)
+                                                ? !!it.isPriceModified
+                                                : (it.changedPrice !== undefined && it.changedPrice !== null),
+                                            sellType: it.sellType || null,
+                                            sellQty: it.sellQty || null,
+                                            hsnCode: it.hsnCode || null,
+                                            originalCost: it.originalCost || null,
+                                            // preserve additional admin fields so they survive edit/save cycles
+                                            isBilled: (typeof it.isBilled !== 'undefined') ? !!it.isBilled : false,
+                                            billedPrice: (typeof it.billedPrice !== 'undefined') ? it.billedPrice : 0,
+                                            stockDesc: it.stockDesc || ''
+                                        });
+                                    } catch (e) { }
+                                });
+
+                                // Reassign SlNo so top row shows highest sequence number (descending display)
+                                try {
+                                    var totalRows = rowsToAdd.length || 0;
+                                    for (var ri = 0; ri < totalRows; ri++) {
+                                        try { rowsToAdd[ri].slNo = totalRows - ri; } catch (e) { }
+                                    }
+                                } catch (e) { }
+
+                                try { safeClearTable(t); } catch (e) { }
+                                try {
+                                    function populateTableWithRows(grid) {
+                                        try {
+                                            if (rowsToAdd.length > 0) {
+                                                if (typeof grid.addData === 'function') {
+                                                    grid.addData(rowsToAdd).then(function() { try { recalcTotals(); } catch (e) { } });
+                                                    return;
+                                                }
+                                                if (typeof grid.replaceData === 'function') {
+                                                    grid.replaceData(rowsToAdd).then(function() { try { recalcTotals(); } catch (e) { } });
+                                                    return;
+                                                }
+                                                if (typeof grid.setData === 'function') {
+                                                    var res2 = grid.setData(rowsToAdd);
+                                                    if (res2 && typeof res2.then === 'function') { res2.then(function() { try { recalcTotals(); } catch (e) { } }); return; }
+                                                    try { recalcTotals(); } catch (e) { }
+                                                    return;
+                                                }
+                                                // fallback: add rows one by one
+                                                rowsToAdd.forEach(function(r) { try { grid.addRow(r, true); } catch (e) { } });
+                                                try { recalcTotals(); } catch (e) { }
+                                            } else {
+                                                try { recalcTotals(); } catch (e) { }
+                                            }
+
+                                            try { toggleInvoiceDetails(); updateGenerateButton(); serverEditPayloadApplied = true; } catch (e) { }
+                                        } catch (ee) { }
+                                    }
+
+                                    // If Tabulator exposes event registration, wait for tableBuilt/renderComplete
+                                    try {
+                                        if (typeof t.on === 'function') {
+                                            // tableBuilt fires when DOM renderer is ready; renderComplete may be used in some builds
+                                            var bound = false;
+                                            try { t.on('tableBuilt', function() { if (!bound) { bound = true; populateTableWithRows(t); } }); } catch (e) { }
+                                            try { t.on('renderComplete', function() { if (!bound) { bound = true; populateTableWithRows(t); } }); } catch (e) { }
+                                            // safety fallback in case events don't fire
+                                            setTimeout(function() { if (!bound) { try { populateTableWithRows(t); } catch (e) { } } }, 100);
+                                        } else {
+                                            // no event API, fallback to small timeout
+                                            setTimeout(function() { populateTableWithRows(t); }, 100);
+                                        }
+                                    } catch (e) {
+                                        // ultimate fallback
+                                        setTimeout(function() { populateTableWithRows(t); }, 100);
+                                    }
+                                } catch (e) { }
+                            } catch (e) { }
+                        });
+                    }
+                } catch (e) { }
+            }
+
+            // Helper to run code with the Tabulator instance (handles promise)
+            var table = null;
+            function withTable(cb) {
+                if (table) return cb(table);
+                if (tablePromise && typeof tablePromise.then === 'function') {
+                    tablePromise.then(function(t) { table = t; try { cb(table); } catch (e) { } });
+                    return;
+                }
+                // fallback: do nothing
+            }
+
+            // Safe clear helper: Tabulator may not have renderer ready immediately even when instance available.
+            // Retry a few times before giving up to avoid "renderer is null" errors seen during page load.
+            function safeClearTable(tbl, attempt) {
+                attempt = attempt || 0;
+                try {
+                    if (tbl && typeof tbl.clearData === 'function') {
+                        tbl.clearData();
+                        return;
+                    }
+                } catch (err) {
+                    // swallow and retry below
+                }
+                if (attempt < 5) {
+                    setTimeout(function() { safeClearTable(tbl, attempt + 1); }, 50);
+                }
+            }
+
+            function recalcTotals() {
+                withTable(function(tbl) {
+                    var rows = tbl.getRows();
+                    var sum = 0;
+                    var sumCgst = 0, sumSgst = 0, sumIgst = 0;
+                    rows.forEach(function(rowComp) {
+                        try {
+                            var r = rowComp.getData() || {};
+                            var rowQtyBase = Number(r.quantity || 0);
+                            var total = Number(rowQtyBase || 0) * Number(r.itemPrice || 0);
+                            if (!isFinite(total)) total = 0;
+                            total = Number(Number(total || 0).toFixed(2));
+                            // update row's totalCost field so tabulator shows it
+                            try { rowComp.update({ totalCost: total.toFixed(2) }); } catch (e) { }
+                            sum += total;
+                            // accumulate taxes from row (stored per base-unit row as rates or amounts)
+                            try {
+                                var rc = rowComp.getData() || {};
+                                // rc.cgst/sgst/igst expected to be per-row tax amount (if stored as rate, server should provide amounts)
+                                var rcC = Number(rc.cgst || 0) || 0;
+                                var rcS = Number(rc.sgst || 0) || 0;
+                                var rcI = Number(rc.igst || 0) || 0;
+                                // If taxes are rates (<=100), treat them as percentage of total; if >100 assume absolute amount
+                                if (rcC > 0 && rcC <= 100) rcC = (Number(total || 0) * rcC / 100);
+                                if (rcS > 0 && rcS <= 100) rcS = (Number(total || 0) * rcS / 100);
+                                if (rcI > 0 && rcI <= 100) rcI = (Number(total || 0) * rcI / 100);
+                                sumCgst += rcC;
+                                sumSgst += rcS;
+                                sumIgst += rcI;
+                            } catch (e) { }
+                        } catch (e) { }
+                    });
+                    document.getElementById('billAmount').value = sum.toFixed(2);
+                    // taxableAmount should reflect bill amount unless discount applied on invoice
+                    var isInvoice = document.getElementById('invoiceRadio').checked;
+                    var discPerc = parseFloat(document.getElementById('discountPercentage').value || '0') || 0;
+                    if (isInvoice && discPerc > 0) {
+                        // cap discount at 100
+                        var effectivePerc = Math.min(100, discPerc);
+                        var taxable = Math.max(0, sum - (sum * effectivePerc / 100));
+                        document.getElementById('taxableAmount').value = taxable.toFixed(2);
+                    } else {
+                        document.getElementById('taxableAmount').value = sum.toFixed(2);
+                    }
+                    // update tax fields based on in/out state selection
+                    try {
+                        var stateType = (document.querySelector('input[name="stateType"]:checked') || {}).value || 'in';
+                        if (stateType === 'in') {
+                            document.getElementById('cgst').value = sumCgst.toFixed(2);
+                            document.getElementById('sgst').value = sumSgst.toFixed(2);
+                            document.getElementById('igst').value = '0.00';
+                        } else {
+                            document.getElementById('cgst').value = '0.00';
+                            document.getElementById('sgst').value = '0.00';
+                            document.getElementById('igst').value = sumIgst.toFixed(2);
+                        }
+                    } catch (e) { }
+                    // compute total bill amount and balance
+                    try {
+                        var taxableAmt = parseFloat(document.getElementById('taxableAmount').value || '0') || 0;
+                        var cg = parseFloat(document.getElementById('cgst').value || '0') || 0;
+                        var sg = parseFloat(document.getElementById('sgst').value || '0') || 0;
+                        var ig = parseFloat(document.getElementById('igst').value || '0') || 0;
+                        var totalBill = 0;
+                        var isEstimate = !document.getElementById('invoiceRadio').checked; // estimate when invoiceRadio not checked
+                        var billAmt = parseFloat(document.getElementById('billAmount').value || '0') || 0;
+
+                        if (isEstimate) {
+                            // For estimates balance = bill amount - amount paid
+                            totalBill = billAmt;
+                        } else {
+                            // For invoices balance = bill amount + taxes depending on in-state flag - amount paid
+                            var stateType = (document.querySelector('input[name="stateType"]:checked') || {}).value || 'in';
+                            if (stateType === 'in') {
+                                totalBill = billAmt + cg + sg;
+                            } else {
+                                totalBill = billAmt + ig;
+                            }
+                        }
+
+                        document.getElementById('totalBillAmount').value = totalBill.toFixed(2);
+
+                        var amountPaidEl = document.getElementById('amountPaid');
+                        var amountPaid = parseFloat(amountPaidEl ? (amountPaidEl.value || '0') : '0') || 0;
+                        var balance = totalBill - amountPaid;
+                        // clamp at 0
+                        balance = Math.max(0, balance);
+                        document.getElementById('balanceAmount').value = balance.toFixed(2);
+                    } catch (e) { }
+
+                    try { tbl.redraw(true); } catch (e) { }
+                });
+            }
+
+            // Toggle invoice details fieldset based on radio
+            function toggleInvoiceDetails() {
+                var isInvoice = document.getElementById('invoiceRadio').checked;
+                var fs = document.getElementById('invoiceDetailsFieldset');
+                if (!fs) return;
+                if (isInvoice) fs.classList.remove('d-none');
+                else fs.classList.add('d-none');
+                // If editing an existing bill, restrict selection to invoice only
+                try {
+                    var billId = parseInt(document.getElementById('billId').value || '0');
+
+                    if (billId > 0) {
+                        document.getElementById('invoiceRadio').disabled = false;
+                        // If we have server payload and it hasn't been applied yet, apply it once
+                        try {
+                            if (typeof serverEditPayload !== 'undefined' && serverEditPayload && serverEditPayload.header && !serverEditPayloadApplied) {
+                                var hdrIsEstimate = !!serverEditPayload.header.isEstimate;
+                                if (hdrIsEstimate) {
+                                    document.getElementById('estimateRadio').checked = true;
+                                    document.getElementById('invoiceRadio').checked = false;
+                                    fs.classList.add('d-none');
+                                } else {
+                                    document.getElementById('invoiceRadio').checked = true;
+                                    document.getElementById('estimateRadio').checked = false;
+                                    fs.classList.remove('d-none');
+                                }
+                                serverEditPayloadApplied = true;
+                            } else {
+                                // Do not override user's choice after initial application; ensure invoice details visibility matches current selection
+                                if (document.getElementById('invoiceRadio').checked) fs.classList.remove('d-none');
+                                else fs.classList.add('d-none');
+                            }
+                        } catch (e) { }
+                    } else {
+                        // do not disable radios when creating new bill
+                        try {
+                            document.getElementById('invoiceRadio').checked = false;
+                            document.getElementById('invoiceRadio').disabled = true;
+                            document.getElementById('estimateRadio').checked = true;
+                        } catch (e) { }
+                    }
+                } catch (e) { }
+            }
+            // initial state
+            toggleInvoiceDetails();
+            document.getElementById('estimateRadio').addEventListener('change', function() { toggleInvoiceDetails(); updateGenerateButton(); try { recalcTotals(); } catch (e) { } });
+            document.getElementById('invoiceRadio').addEventListener('change', function() { toggleInvoiceDetails(); updateGenerateButton(); try { recalcTotals(); } catch (e) { } });
+
+            // when stateType changes (in/out) recalc taxes
+            try {
+                var stateRadios = document.querySelectorAll('input[name="stateType"]');
+                stateRadios.forEach(function(r) { r.addEventListener('change', function() { recalcTotals(); }); });
+            } catch (e) { }
+
+            // when amount paid changes, recalc totals and balance immediately
+            try {
+                var amtPaidEl = document.getElementById('amountPaid');
+                if (amtPaidEl) {
+                    amtPaidEl.addEventListener('input', function() { try { recalcTotals(); } catch (e) { } });
+                    amtPaidEl.addEventListener('change', function() { try { recalcTotals(); } catch (e) { } });
+                }
+            } catch (e) { }
+
+            // when mobile reaches 10 chars, fetch customer details (do not create/save here)
+            try {
+                var mobileEl = document.getElementById('mobile');
+                var customerIdEl = document.getElementById('customerId');
+                if (mobileEl) {
+                    mobileEl.addEventListener('input', function() {
+                        try {
+                            var v = (this.value || '').toString();
+                            // enforce max 10 characters
+                            if (v.length > 10) { this.value = v.substr(0, 10); v = this.value; }
+
+                            if (v.length === 10) {
+                                var mobileNum = parseInt(v, 10) || 0;
+                                if (mobileNum > 0) {
+                                    fetch(getCustomerByMobileUrl + '?mobile=' + encodeURIComponent(mobileNum))
+                                        .then(function(r) { return r.json(); })
+                                        .then(function(resp) {
+                                            if (resp && resp.success && resp.found) {
+                                                var d = resp.data || {};
+                                                try { document.getElementById('customerName').value = d.name || document.getElementById('customerName').value || ''; } catch (e) { }
+                                                try { document.getElementById('address').value = d.custAddress || document.getElementById('address').value || ''; } catch (e) { }
+                                                try { document.getElementById('customerGstin').value = d.custGstin || document.getElementById('customerGstin').value || ''; } catch (e) { }
+                                                if (customerIdEl) customerIdEl.value = d.customerId || 0;
+                                                try { if (document.getElementById('customerType').value !== '') document.getElementById('customerType').disabled = true; } catch (e) { }
+                                                try { document.getElementById('mobile2').value = d.mobile2 || document.getElementById('mobile2').value || ''; } catch (e) { }
+                                                document.getElementById('itemSearch').focus();
+                                            }
+                                        }).catch(function() {
+                                        });
+                                }
+                            }
+                        } catch (e) { }
+                    });
+                }
+                // disable customerType dropdown after selecting a customer type
+                // Do NOT automatically disable customerType on change. It should remain selectable until user saves or clears.
+            } catch (e) { }
+
+            function updateGenerateButton() {
+                var btn = document.getElementById('generateInvoice');
+                if (!btn) return;
+                var isInvoice = document.getElementById('invoiceRadio').checked;
+                btn.textContent = isInvoice ? 'Generate Invoice' : 'Generate Estimate';
+            }
+            updateGenerateButton();
+
+            function clearEditingState() {
+                try { $('#addItemBtn').data('editingRow', null); } catch (e) { }
+                try { document.getElementById('addItemBtn').textContent = 'Add'; } catch (e) { try { $('#addItemBtn').text('Add'); } catch (e) { } }
+                try { document.getElementById('itemSearch').value = ''; document.getElementById('itemSearch').focus() } catch (e) { }
+                try { document.getElementById('itemCode').value = ''; } catch (e) { }
+                try { document.getElementById('itemName').value = ''; } catch (e) { }
+                try { document.getElementById('itemQty').value = ''; } catch (e) { }
+                try { document.getElementById('itemCost').value = '0.00'; } catch (e) { }
+                try { document.getElementById('itemTotal').value = '0.00'; } catch (e) { }
+                try { $('#itemType').val('0'); } catch (e) { }
+                try { $('#itemCode').data('itemId', 0); } catch (e) { }
+            }
+
+            // apply discount change to rows and totals immediately
+            try {
+                var discEl = document.getElementById('discountPerItem');
+                if (discEl) {
+                    discEl.addEventListener('input', function() {
+                        // recalc totals and redraw table so formatters/mutators pick up new discount
+                        recalcTotals();
+                        withTable(function(t) { try { t.redraw(true); } catch (e) { } });
+                    });
+                }
+                // discount is always percentage; no checkbox
+            } catch (e) { }
+
+            // helper to compute effective per-type price given discount mode
+            // helper to compute effective per-type price given DiscountPerItem which is a percentage per displayed type-unit
+            function getEffectivePricePerType(pricePerType) {
+                try {
+                    var discountPercent = parseFloat((document.getElementById('discountPerItem') && document.getElementById('discountPerItem').value) || 0) || 0;
+                    if (!isFinite(pricePerType)) pricePerType = Number(pricePerType) || 0;
+                    // discountPercent is percentage per displayed type-unit, so reduce pricePerType proportionally
+                    var eff = Number(pricePerType) * (1 - (Number(discountPercent || 0) / 100));
+                    if (!isFinite(eff)) eff = 0;
+                    return Math.max(0, eff);
+                } catch (e) { return Math.max(0, Number(pricePerType) || 0); }
+            }
+
+            // Item autocomplete on the combined item code/name field (respect customer type)
+            var getCustomerByMobileUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Url.Action("GetCustomerByMobile", "Billing")));
+            var getItemsUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Url.Action("GetItems", "Billing")));
+            var getItemTypesUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Url.Action("GetItemTypes", "Billing")));
+            var getItemTypePriceUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Url.Action("GetItemTypePrice", "Billing")));
+            var getItemStockDescUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Url.Action("GetItemStockDesc", "Billing")));
+            // base URL for server-side PDF preview endpoint; use as fallback when server previewUrl is not provided
+            var previewPdfBaseUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Url.Action("PreviewPdf", "Billing", null, Context.Request.Scheme, Context.Request.Host.Value)));
+            // URL to View Bills for redirect after invoice preview
+            var viewBillsUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Url.Action("ViewBills", "Home")));
+
+            function refreshItemDetail(row) {
+                if (!row || !getItemStockDescUrl) return;
+
+                var data = row.getData() || {};
+                var itemId = Number(data.itemId || 0);
+                var quantity = Number(data.quantity || 0);
+                if (itemId <= 0 || quantity <= 0) {
+                    row.update({ detailed: '' });
+                    return;
+                }
+
+                fetch(getItemStockDescUrl + '?itemId=' + encodeURIComponent(itemId) + '&quantity=' + encodeURIComponent(quantity))
+                    .then(function(response) { return response.json(); })
+                    .then(function(result) {
+                        if (result && result.success) {
+                            row.update({ detailed: result.data || '' });
+                        }
+                    })
+                    .catch(function() { row.update({ detailed: '' }); });
+            }
+
+            $("#itemSearch").autocomplete({
+                minLength: 2,
+                source: function(request, response) {
+                    var cust = $('#customerType').val();
+                    if (!cust || cust === '') {
+                        if (!$('#customerType').data('warned')) {
+                            alert('Please select Customer Type before searching items');
+                            $('#customerType').data('warned', true);
+                            $('#customerType').focus();
+                        }
+                        return;
+                    }
+                    var url = getItemsUrl + '?q=' + encodeURIComponent(request.term) + '&customerType=' + encodeURIComponent(cust);
+                    fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+                        if (!data || !data.success) return response([]);
+                        var items = (data.data || []).map(function(i) {
+                            var code = i.ItemCode || i.itemCode || i.ItemId || i.itemId || '';
+                            var name = i.ItemName || i.itemName || i.Item || i.item || '';
+                            // try multiple possible price property names; fall back to 0
+                            var price = (i.ItemPrice !== undefined) ? i.ItemPrice
+                                : (i.itemPrice !== undefined) ? i.itemPrice
+                                    : 0;
+                            var priceText = (price !== null && price !== undefined && !isNaN(Number(price))) ? (' \u20B9' + Number(price).toFixed(2)) : '';
+                            return { label: (code || '') + (name ? ' - ' + name : '') + (priceText ? ' · ' + priceText : ''), value: code || name, item: i };
+                        });
+                        response(items);
+                    }).catch(function() { response([]); });
+                },
+                select: function(event, ui) {
+                    var it = ui.item.item;
+                    // fill inputs
+                    var code = it.ItemCode || it.itemCode || it.ItemId || it.itemId || '';
+                    var name = it.ItemName || it.itemName || it.Item || it.item || '';
+                    $('#itemSearch').val(code + (name ? ' - ' + name : ''));
+                    $('#itemCode').val(code);
+                    $('#itemName').val(name);
+                    // do not assign cost here; cost will be populated when an Item Type is selected
+                    // store numeric id on element data
+                    var itemIdVal = it.ItemId || it.itemId || 0;
+                    $('#itemCode').data('itemId', itemIdVal);
+                    // If server returned price/tax info in the item DTO, pre-store them on the #itemCode element for later use
+                    try {
+                        var dtoPrice = (it.ItemPrice !== undefined) ? it.ItemPrice : (it.itemPrice !== undefined ? it.itemPrice : 0);
+                        var dtoCgst = (it.CGST !== undefined) ? it.CGST : (it.cgst !== undefined ? it.cgst : (it.CGSTRate !== undefined ? it.CGSTRate : 0));
+                        var dtoSgst = (it.SGST !== undefined) ? it.SGST : (it.sgst !== undefined ? it.sgst : (it.SGSTRate !== undefined ? it.SGSTRate : 0));
+                        var dtoIgst = (it.IGST !== undefined) ? it.IGST : (it.igst !== undefined ? it.igst : (it.IGSTRate !== undefined ? it.IGSTRate : 0));
+                        $('#itemCode').data('itemPrice', Number(dtoPrice || 0));
+                        $('#itemCode').data('cgst', Number(dtoCgst || 0));
+                        $('#itemCode').data('sgst', Number(dtoSgst || 0));
+                        $('#itemCode').data('igst', Number(dtoIgst || 0));
+                    } catch (e) { }
+                    // populate item types and auto-select if DTO provides type
+                    fetch(getItemTypesUrl + '?itemId=' + encodeURIComponent(itemIdVal)).then(function(r) { return r.json(); }).then(function(resp) {
+                        var sel = $('#itemType'); sel.empty(); sel.append($('<option>').val(0).text('--Item Type--'));
+                        if (resp && resp.success && resp.data) {
+                            resp.data.forEach(function(t) { console.log('t',t); sel.append($('<option>').val(t.ItemTypeId || t.itemTypeId || 0).text((t.TypeName || t.typeName)+' ('+t.qtyPerType +' per ' +(t.TypeName || t.typeName) +')')); });
+                            // try to set selected item type from item DTO (if present)
+                            var selectedType = it.ItemTypeId || it.itemType || it.ItemType || it.itemTypeId || 0;
+                            if (selectedType) { sel.val(selectedType); sel.trigger('change'); }
+                            // focus quantity input after item selection so user can immediately enter quantity
+                            try { document.getElementById('itemQty').focus(); } catch (e) { }
+                        }
+                    }).catch(function() { /* ignore */ });
+                    return false;
+                }
+            });
+
+            // Allow typed codes or names to resolve on blur/change as well.
+            $("#itemSearch").on('input', function() {
+                $('#itemCode').val('').data('itemId', 0);
+                $('#itemName').val('');
+            });
+
+            $("#itemSearch").on('change blur', function() {
+                if ($('#itemCode').data('itemId')) return;
+                var v = $(this).val();
+                if (!v) return;
+                var cust = $('#customerType').val();
+                if (!cust || cust === '') {
+                    if (!$('#customerType').data('warned')) {
+                        alert('Please select Customer Type before searching items');
+                        $('#customerType').data('warned', true);
+                    }
+                    return;
+                }
+                var url = getItemsUrl + '?q=' + encodeURIComponent(v) + '&customerType=' + encodeURIComponent(cust);
+                fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+                    if (!data || !data.success || !data.data || data.data.length == 0) return;
+                    var it = data.data[0];
+                    var code = it.ItemCode || it.itemCode || it.ItemId || it.itemId || '';
+                    var name = it.ItemName || it.itemName || it.Item || it.item || '';
+                    $('#itemSearch').val(code + (name ? ' - ' + name : ''));
+                    $('#itemCode').val(code);
+                    $('#itemName').val(name);
+                    // do not assign cost here; cost will be populated when an Item Type is selected
+                    var itemIdVal = it.ItemId || it.itemId || 0;
+                    $('#itemCode').data('itemId', itemIdVal);
+                    fetch(getItemTypesUrl + '?itemId=' + encodeURIComponent(itemIdVal)).then(function(r) { return r.json(); }).then(function(resp) {
+                        var sel = $('#itemType'); sel.empty(); sel.append($('<option>').val(0).text('--Item Type--'));
+                        if (resp && resp.success && resp.data) {
+                            resp.data.forEach(function(t) { sel.append($('<option>').val(t.ItemTypeId || t.itemTypeId || 0).text(t.TypeName || t.typeName)); });
+                            var selectedType = it.ItemTypeId || it.itemType || it.ItemType || it.itemTypeId || 0;
+                            if (selectedType) sel.val(selectedType).trigger('change');
+                        }
+                    }).catch(function() { });
+                }).catch(function() { });
+            });
+
+            // when itemType changes, fetch cost based on customerType and selected item/type
+            $('#itemType').on('change', function() {
+                var itemId = $('#itemCode').data('itemId') || 0;
+                var itemTypeId = $(this).val() || 0;
+                var cust = $('#customerType').val() || 1;
+                if (!itemId || !itemTypeId) return;
+                var url = getItemTypePriceUrl + '?itemId=' + encodeURIComponent(itemId) + '&itemTypeId=' + encodeURIComponent(itemTypeId) + '&customerType=' + encodeURIComponent(cust);
+                fetch(url).then(function(r) { return r.json(); }).then(function(d) {
+                    if (!d || !d.success) return;
+                    var price = parseFloat(d.price || 0);
+                    var qtyPerType = parseInt(d.qtyPerType || 0);
+                    $('#itemCost').val(price.toFixed(2));
+                    calcItemTotal();
+                }).catch(function() { });
+            });
+
+            document.getElementById('addItemBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                // validate required fields
+                var itemId = $('#itemCode').data('itemId') || 0;
+                var itemSearchVal = (document.getElementById('itemSearch').value || '').toString().trim();
+                var itemCodeVal = (document.getElementById('itemCode').value || '').toString().trim();
+                var itemTypeId = parseInt(document.getElementById('itemType').value || '0');
+                var qty = parseInt(document.getElementById('itemQty').value || '0');
+                var price = parseFloat(document.getElementById('itemCost').value || '0');
+
+                if (!itemSearchVal || !itemCodeVal) { alert('Enter or select an Item Code or Name'); return; }
+                if (!itemId || itemId <= 0) { alert('Please select a valid item from suggestions'); return; }
+                if (!itemTypeId || itemTypeId <= 0) { alert('Please select Item Type'); return; }
+                if (!qty || qty <= 0) { alert('Quantity must be greater than zero'); return; }
+                if (isNaN(price) || price <= 0) { alert('Cost must be greater than zero'); return; }
+
+                var itm = {
+                    itemId: itemId,
+                    itemCode: itemCodeVal,
+                    itemName: document.getElementById('itemName').value || '',
+                    itemTypeId: itemTypeId,
+                    itemTypeName: $('#itemType option:selected').text() || '',
+                    detailed: '',
+                    // quantity and qtyPerType will be set after fetching type info (stored as base units)
+                     quantity: 0,
+                    qtyPerType: 1,
+                     itemPrice: price,
+                     sellType: itemTypeId,
+                     sellQty: qty,
+                     originalEntry: qty + ' ' + ($('#itemType option:selected').text() || '') + "'s"
+                };
+
+                // First get type-to-base-quantity mapping so we can request stock description at lowest level
+                fetch(getItemTypePriceUrl + '?itemId=' + encodeURIComponent(itemId) + '&itemTypeId=' + encodeURIComponent(itemTypeId) + '&customerType=' + encodeURIComponent($('#customerType').val() || ''))
+                    .then(function(r) { return r.json(); })
+                    .then(function(tp) {
+                        var qtyPerType = 1;
+                        // prefer user-entered price (price) and only use server qtyPerType
+                        var typePrice = price;
+                        try { if (tp) { if (tp.qtyPerType !== undefined) qtyPerType = Number(tp.qtyPerType) || 1; /* do not override typePrice with server price so manual edits are respected */ } } catch (e) { }
+                        // capture tax rates/amounts if returned by server
+                        var cgstRate = 0, sgstRate = 0, igstRate = 0;
+                        try { if (tp) { cgstRate = Number(tp.cgst || tp.cgstPercent || tp.cgstPercent || 0) || 0; sgstRate = Number(tp.sgst || tp.sgstPercent || tp.sgstPercent || 0) || 0; igstRate = Number(tp.igst || tp.igstPercent || tp.igstPercent || 0) || 0; } } catch (e) { }
+                        // store base-unit quantity and qtyPerType on itm
+                        itm.qtyPerType = qtyPerType;
+                        itm.quantity = Math.max(0, Number(qty || 0) * qtyPerType);
+                        // Decide server-provided display price (if any) and treat it as OriginalCost.
+                        // Preserve user's entered price (price) as the display price used for this add operation.
+                        var serverDisplayPrice = null;
+                        try {
+                            if (tp && tp.price !== undefined && !isNaN(Number(tp.price)) && Number(tp.price) > 0) {
+                                serverDisplayPrice = Number(tp.price || 0);
+                            }
+                        } catch (e) { serverDisplayPrice = null; }
+                        try {
+                            var prePrice = $('#itemCode').data('itemPrice');
+                            if ((serverDisplayPrice === null || serverDisplayPrice === undefined || serverDisplayPrice <= 0) && prePrice !== undefined && prePrice !== null && !isNaN(Number(prePrice)) && Number(prePrice) > 0) {
+                                serverDisplayPrice = Number(prePrice || 0);
+                            }
+                        } catch (e) { }
+
+                        // Compute base prices (per base unit)
+                        var userEnteredDisplayPrice = (!isNaN(Number(price)) && Number(price) > 0) ? Number(price) : null;
+                        var serverBasePrice = null;
+                        if (serverDisplayPrice !== null && serverDisplayPrice !== undefined) {
+                            try { serverBasePrice = Number(serverDisplayPrice) / (Number(qtyPerType || 1)); } catch (e) { serverBasePrice = Number(serverDisplayPrice); }
+                        }
+
+                        // Determine which display price to show: prefer user's entered value if present, otherwise server display price, otherwise computed
+                        var displayPriceUsed = null;
+                        if (userEnteredDisplayPrice !== null) displayPriceUsed = userEnteredDisplayPrice;
+                        else if (serverDisplayPrice !== null) displayPriceUsed = serverDisplayPrice;
+                        else displayPriceUsed = 0;
+
+                        // store itemPrice as price PER BASE UNIT (lowest-level) based on chosen display price
+                        var basePrice = 0;
+                        try { basePrice = (Number(displayPriceUsed || 0) / (Number(qtyPerType || 1))); } catch (e) { basePrice = Number(displayPriceUsed || 0); }
+                        itm.itemPrice = isFinite(basePrice) ? basePrice : 0;
+
+                        // store the display price for type-unit
+                        itm.displayPrice = Number(displayPriceUsed || 0);
+
+                        // store tax rates (percent) from server/autocomplete into itm so they are added to the grid as percentages
+                        itm.cgst = Number(cgstRate || 0);
+                        itm.sgst = Number(sgstRate || 0);
+                        itm.igst = Number(igstRate || 0);
+
+                        // OriginalCost should reflect server-known price (if available) per base unit; otherwise use itemPrice
+                        itm.originalCost = (serverBasePrice !== null && serverBasePrice !== undefined) ? serverBasePrice : itm.itemPrice;
+
+                        // detect price modification: only if serverOriginal exists compare user-entered display price with serverDisplayPrice
+                        try {
+                            var isModified = false;
+                            var changedPriceVal = null;
+                            if (userEnteredDisplayPrice !== null && serverDisplayPrice !== null && serverDisplayPrice !== undefined) {
+                                if (Math.abs(Number(userEnteredDisplayPrice) - Number(serverDisplayPrice || 0)) > 0.001) {
+                                    isModified = true;
+                                    changedPriceVal = (Number(userEnteredDisplayPrice) / (Number(itm.qtyPerType || 1)));
+                                }
+                            }
+                            itm.changedPrice = isModified ? (isFinite(changedPriceVal) ? changedPriceVal : Number(itm.itemPrice || 0)) : null;
+                            itm.isPriceModified = !!isModified;
+                        } catch (e) { itm.changedPrice = null; itm.isPriceModified = false; }
+                        // capture tax rates if server provides them (percentages)
+                        try { itm.cgst = (tp && (tp.cgst || tp.cgstRate)) ? Number(tp.cgst || tp.cgstRate) : 0; itm.sgst = (tp && (tp.sgst || tp.sgstRate)) ? Number(tp.sgst || tp.sgstRate) : 0; itm.igst = (tp && (tp.igst || tp.igstRate)) ? Number(tp.igst || tp.igstRate) : 0; } catch (e) { itm.cgst = itm.sgst = itm.igst = 0; }
+                        // If item-level DTO had price/tax pre-stored from autocomplete selection, prefer those values if present
+                        try {
+                            var prePrice = $('#itemCode').data('itemPrice');
+                            // Only prefer the autocomplete-provided DTO price when the user did not enter a price and server did not provide one
+                            if (prePrice !== undefined && prePrice !== null && !isNaN(Number(prePrice)) && Number(prePrice) > 0 && (!price || Number(price) <= 0) && (!(tp && tp.price) || Number(tp.price) <= 0)) {
+                                // adjust base price using qtyPerType
+                                var maybeBase = Number(prePrice || 0) / (Number(qtyPerType || 1));
+                                itm.itemPrice = isFinite(maybeBase) ? maybeBase : itm.itemPrice;
+                            }
+                            var preC = $('#itemCode').data('cgst'); if (preC !== undefined && preC !== null) itm.cgst = Number(preC || itm.cgst || 0);
+                            var preS = $('#itemCode').data('sgst'); if (preS !== undefined && preS !== null) itm.sgst = Number(preS || itm.sgst || 0);
+                            var preI = $('#itemCode').data('igst'); if (preI !== undefined && preI !== null) itm.igst = Number(preI || itm.igst || 0);
+                        } catch (e) { }
+                        var lowestQty = itm.quantity;
+                        // now ask for detailed description using lowest-level quantity
+                        return fetch(getItemStockDescUrl + '?itemId=' + encodeURIComponent(itemId) + '&quantity=' + encodeURIComponent(lowestQty));
+                    })
+                    .then(function(r) { return r.json(); })
+                    .then(function(resp) {
+                         try {
+                             if (resp && resp.success) {
+                                 itm.detailed = (itm.originalEntry ? itm.originalEntry + ' -> ' : '') + (resp.data || '');
+                             }
+                         } catch (e) { }
+
+                        // Upsert behavior on Add: if any existing row has same itemId, replace it in-place; otherwise add new row
+                        withTable(function(tbl) {
+                            // helper to add a row at top and assign sequential SlNo (newest gets highest number)
+                            function addRowAtTop(tableInstance, rowData) {
+                                try {
+                                    var existing = tableInstance.getRows() || [];
+                                    // Determine the current maximum SlNo among existing rows and assign next = max+1
+                                    var maxSl = 0;
+                                    for (var i = 0; i < existing.length; i++) {
+                                        try {
+                                            var d = existing[i].getData() || {};
+                                            var s = parseInt(d.slNo || 0, 10) || 0;
+                                            if (s > maxSl) maxSl = s;
+                                        } catch (e) { }
+                                    }
+                                    rowData.slNo = (maxSl || 0) + 1;
+                                } catch (e) { try { rowData.slNo = 1; } catch (ex) { rowData.slNo = 1; } }
+                                try { tableInstance.addRow(rowData, true).then(function() { recalcTotals(); }); } catch (e) { }
+                            }
+                            try {
+                                var rowsNow = tbl.getRows();
+                                var existingRow = null;
+                                for (var ri = 0; ri < rowsNow.length; ri++) {
+                                    var dd = rowsNow[ri].getData() || {};
+                                    if (parseInt(dd.itemId || 0, 10) === parseInt(itemId || 0, 10)) { existingRow = rowsNow[ri]; break; }
+                                }
+
+                                if (existingRow) {
+                                    // replace existing row with latest details (update in place so index remains)
+                                    // Prevent updating packed rows
+                                    try {
+                                        var exData = existingRow.getData() || {};
+                                        if (exData.isPacked === true) {
+                                            try {
+                                                var nm = (exData.itemName || exData.itemCode) ? (exData.itemName || exData.itemCode) : 'item';
+                                                showMessage('Packed item "' + nm + '" cannot be modified. Unpack the item before making changes.');
+                                            } catch (e) { alert('Packed items cannot be modified.'); }
+                                            return;
+                                        }
+                                    } catch (e) { }
+                                    existingRow.update({ itemId: itm.itemId, itemCode: itm.itemCode, itemName: itm.itemName, itemTypeId: itm.itemTypeId, itemTypeName: itm.itemTypeName, qtyPerType: itm.qtyPerType, quantity: itm.quantity, itemPrice: itm.itemPrice, detailed: itm.detailed, cgst: itm.cgst || 0, sgst: itm.sgst || 0, igst: itm.igst || 0 });
+                                    try {
+                                        var etc = existingRow.getCell('totalCost'); if (etc && typeof etc.setValue === 'function') {
+                                            var displayQtyE = (Number(itm.quantity || 0) / Number(itm.qtyPerType || 1)) || 0;
+                                            var pricePerTypeE = (Number(itm.itemPrice || 0) * Number(itm.qtyPerType || 1)) || 0;
+                                            etc.setValue((displayQtyE * getEffectivePricePerType(pricePerTypeE)).toFixed(2));
+                                        }
+                                    } catch (e) { }
+                                    recalcTotals(); try { tbl.redraw(true); } catch (e) { }
+                                    // reset inputs
+                                    clearEditingState();
+                                    return;
+                                }
+
+                                // no existing row -> add new at top
+                                addRowAtTop(tbl, itm);
+                            } catch (e) { }
+                        });
+                        return;
+
+                        // if we're editing an existing row, update that row and exit
+                        var editingRowId = $('#addItemBtn').data('editingRow') || null;
+                        if (editingRowId) {
+                            withTable(function(tbl) {
+                                try {
+                                    var rowComp = tbl.getRow(editingRowId);
+                                    if (!rowComp) {
+                                        // try to find by matching data ids
+                                        var rowsTmp = tbl.getRows();
+                                        for (var ri = 0; ri < rowsTmp.length; ri++) {
+                                            var dd = rowsTmp[ri].getData() || {};
+                                            if ((dd.__rowId || dd.rowId || null) === editingRowId) { rowComp = rowsTmp[ri]; break; }
+                                        }
+                                    }
+                                    if (rowComp) {
+                                        // check if another row already exists with same itemId+itemType (different row)
+                                        var other = null;
+                                        try {
+                                            var all = tbl.getRows();
+                                            for (var oi = 0; oi < all.length; oi++) {
+                                                var dd = all[oi].getData() || {};
+                                                var rid = (dd.__rowId || dd.rowId || null);
+                                                if (rid && rid !== editingRowId && parseInt(dd.itemId || 0, 10) === parseInt(itm.itemId || 0, 10) && parseInt(dd.itemTypeId || 0, 10) === parseInt(itm.itemTypeId || 0, 10)) { other = all[oi]; break; }
+                                            }
+                                        } catch (e) { }
+
+                                        if (other) {
+                                            // replace the other row's values (update, not add)
+                                            try {
+                                                // prevent updating or removing packed rows
+                                                var otherData = other.getData() || {};
+                                                if (otherData.isPacked === true) {
+                                                    try {
+                                                        var onm = (otherData.itemName || otherData.itemCode) ? (otherData.itemName || otherData.itemCode) : 'item';
+                                                        showMessage('Packed item "' + onm + '" cannot be modified or merged.');
+                                                    } catch (e) { alert('Packed items cannot be modified or merged.'); }
+                                                    return;
+                                                }
+                                                other.update({ itemId: itm.itemId, itemCode: itm.itemCode, itemName: itm.itemName, itemTypeId: itm.itemTypeId, itemTypeName: itm.itemTypeName, qtyPerType: itm.qtyPerType, quantity: itm.quantity, itemPrice: itm.itemPrice, detailed: itm.detailed, cgst: itm.cgst || 0, sgst: itm.sgst || 0, igst: itm.igst || 0, displayPrice: itm.displayPrice || 0, originalCost: itm.originalCost || itm.itemPrice || 0, changedPrice: itm.changedPrice || null, isPriceModified: !!itm.isPriceModified, slNo: itm.slNo || null });
+                                                try {
+                                                    var otc = other.getCell('totalCost'); if (otc && typeof otc.setValue === 'function') {
+                                                        var displayQtyO = (Number(itm.quantity || 0) / Number(itm.qtyPerType || 1)) || 0;
+                                                        var pricePerTypeO = (Number(itm.itemPrice || 0) * Number(itm.qtyPerType || 1)) || 0;
+                                                        otc.setValue((displayQtyO * getEffectivePricePerType(pricePerTypeO)).toFixed(2));
+                                                    }
+                                                } catch (e) { }
+                                            } catch (e) { }
+                                            // remove the edited row (it was effectively merged by replace)
+                                            try { rowComp.delete(); } catch (e) { }
+                                        } else {
+                                            // update the editing row with new itm values (itm.itemPrice is base-unit)
+                                            rowComp.update({ itemId: itm.itemId, itemCode: itm.itemCode, itemName: itm.itemName, itemTypeId: itm.itemTypeId, itemTypeName: itm.itemTypeName, qtyPerType: itm.qtyPerType, quantity: itm.quantity, itemPrice: itm.itemPrice, detailed: itm.detailed, cgst: itm.cgst || 0, sgst: itm.sgst || 0, igst: itm.igst || 0, displayPrice: itm.displayPrice || 0, originalCost: itm.originalCost || itm.itemPrice || 0, changedPrice: itm.changedPrice || null, isPriceModified: !!itm.isPriceModified, slNo: itm.slNo || null });
+                                            try {
+                                                var tc = rowComp.getCell('totalCost'); if (tc && typeof tc.setValue === 'function') {
+                                                    var displayQty = (Number(itm.quantity || 0) / Number(itm.qtyPerType || 1)) || 0;
+                                                    var pricePerType = (Number(itm.itemPrice || 0) * Number(itm.qtyPerType || 1)) || 0;
+                                                    var eff = getEffectivePricePerType(pricePerType);
+                                                    tc.setValue((displayQty * eff).toFixed(2));
+                                                }
+                                            } catch (e) { }
+                                        }
+
+                                        recalcTotals();
+                                        try { tbl.redraw(true); } catch (e) { }
+                                        // clear editing state and reset UI after update
+                                        clearEditingState();
+                                    }
+                                } catch (e) { }
+                            });
+
+                            // clear editing state and reset UI
+                            clearEditingState();
+                            return;
+                        }
+
+                        withTable(function(tbl) {
+                            try {
+                                var rows = tbl.getRows();
+                                var matches = [];
+                                for (var i = 0; i < rows.length; i++) {
+                                    var d = rows[i].getData();
+                                    if (parseInt(d.itemId || 0, 10) === parseInt(itemId || 0, 10)) matches.push(rows[i]);
+                                }
+
+                                // If no existing item rows, just add as before
+                                if (matches.length === 0) {
+                                    // ensure newly added row includes tracing fields
+                                    try { itm.displayPrice = itm.displayPrice || (itm.itemPrice * itm.qtyPerType); } catch (e) { itm.displayPrice = itm.itemPrice * itm.qtyPerType; }
+                                    try { itm.originalCost = itm.originalCost || itm.itemPrice; } catch (e) { itm.originalCost = itm.itemPrice; }
+                                    try { itm.changedPrice = itm.changedPrice || null; } catch (e) { itm.changedPrice = null; }
+                                    try { itm.isPriceModified = !!itm.isPriceModified; } catch (e) { itm.isPriceModified = false; }
+                                    try { itm.slNo = itm.slNo || ((tbl.getData() || []).length + 1); } catch (e) { itm.slNo = 0; }
+                                    // use addRowAtTop helper so top-insertion and slNo handling remain consistent
+                                    addRowAtTop(tbl, itm);
+                                    return;
+                                }
+
+                                // We have existing rows for same itemId - merge across types
+                                var distinctTypeIds = {};
+                                // include existing types
+                                matches.forEach(function(r) { var d = r.getData(); distinctTypeIds[parseInt(d.itemTypeId || 0, 10)] = true; });
+                                // include new type
+                                distinctTypeIds[parseInt(itemTypeId || 0, 10)] = true;
+                                var typeIds = Object.keys(distinctTypeIds).map(function(x) { return Number(x); }).filter(function(x) { return x && x > 0; });
+
+                                // fetch qtyPerType & price for all involved types
+                                var fetches = typeIds.map(function(tid) {
+                                    return fetch(getItemTypePriceUrl + '?itemId=' + encodeURIComponent(itemId) + '&itemTypeId=' + encodeURIComponent(tid) + '&customerType=' + encodeURIComponent($('#customerType').val() || '')).then(function(r) { return r.json(); }).then(function(js) { return { typeId: tid, qtyPerType: Number((js && js.qtyPerType) || 1), price: Number((js && js.price) || 0) }; }).catch(function() { return { typeId: tid, qtyPerType: 1, price: 0 }; });
+                                });
+
+                                Promise.all(fetches).then(function(typeInfos) {
+                                    try {
+                                        var infoMap = {};
+                                        typeInfos.forEach(function(i) { infoMap[i.typeId] = i; });
+
+                                        // if user entered a custom price for the current selected type, prefer that price
+                                        try { var selTid = Number(itemTypeId || 0); if (infoMap[selTid]) { infoMap[selTid].price = Number(price || infoMap[selTid].price || 0); infoMap[selTid].qtyPerType = Number(itm.qtyPerType || infoMap[selTid].qtyPerType || 1); } } catch (e) { }
+
+                                        // sum base units across existing rows and new incoming
+                                        var baseUnits = 0;
+                                        matches.forEach(function(r) { var d = r.getData(); baseUnits += Number(d.quantity || 0); });
+                                        var newQtyPer = (infoMap[Number(itemTypeId)] && infoMap[Number(itemTypeId)].qtyPerType) || 1;
+                                        baseUnits += Number(qty || 0) * Number(newQtyPer || 1);
+
+                                        // choose target type as the one with smallest qtyPerType (most granular)
+                                        var targetTypeId = typeIds.reduce(function(acc, t) { if (!acc) return t; var a = infoMap[acc] && infoMap[acc].qtyPerType || 1; var b = infoMap[t] && infoMap[t].qtyPerType || 1; return (b < a) ? t : acc; }, null);
+                                        var targetQtyPer = (infoMap[targetTypeId] && infoMap[targetTypeId].qtyPerType) || 1;
+
+                                        // mergedQty is stored as base units (lowest-level)
+                                        var mergedQty = Number(baseUnits);
+
+                                        // compute price per base unit for each type and pick the lowest
+                                        var minPricePerBase = null;
+                                        typeInfos.forEach(function(i) { var ppb = (i.price || 0) / (i.qtyPerType || 1); if (minPricePerBase === null || ppb < minPricePerBase) minPricePerBase = ppb; });
+                                        if (minPricePerBase === null) minPricePerBase = 0;
+                                        var mergedPriceForTargetUnit = parseFloat((minPricePerBase * targetQtyPer).toFixed(2));
+
+                                        // update first matched row, delete others
+                                        var primary = matches[0];
+                                        var primaryData = primary.getData();
+                                        var primaryTypeName = primaryData.itemTypeName || itm.itemTypeName || '';
+                                        // if targetTypeId matches new type, use its name; if matches primary existing use that name
+                                        if (Number(targetTypeId) === Number(itemTypeId)) primaryTypeName = itm.itemTypeName || primaryTypeName;
+                                        else {
+                                            // try to find a matching existing name
+                                            for (var i = 0; i < matches.length; i++) { var nn = matches[i].getData().itemTypeName; if (matches[i].getData().itemTypeId == targetTypeId) { primaryTypeName = nn; break; } }
+                                        }
+
+                                        // compute totalCost for the merged row (apply discount per type-unit if any)
+                                        var discountPerItemVal = parseFloat((document.getElementById('discountPerItem') && document.getElementById('discountPerItem').value) || 0) || 0;
+                                        var displayQtyMerged = (Number(mergedQty || 0) / Number(targetQtyPer || 1)) || 0;
+                                        var pricePerTypeUnit = (Number(minPricePerBase || 0) * Number(targetQtyPer || 1)) || 0;
+                                        var effectivePricePerType = getEffectivePricePerType(pricePerTypeUnit);
+                                        var mergedTotalCost = (displayQtyMerged * effectivePricePerType).toFixed(2);
+                                        // store itemPrice as base-unit price (minPricePerBase) and totalCost
+                                        primary.update({ quantity: mergedQty, qtyPerType: targetQtyPer, itemPrice: minPricePerBase, itemTypeId: targetTypeId, itemTypeName: primaryTypeName, detailed: itm.detailed, totalCost: mergedTotalCost, cgst: itm.cgst || 0, sgst: itm.sgst || 0, igst: itm.igst || 0 });
+                                        try { var tcCell = primary.getCell('totalCost'); if (tcCell && typeof tcCell.setValue === 'function') tcCell.setValue(mergedTotalCost); } catch (e) { }
+                                        // remove additional matched rows beyond the primary
+                                        for (var i = 1; i < matches.length; i++) {
+                                            try {
+                                                var md = matches[i].getData() || {};
+                                                if (md.isPacked === true) {
+                                                    try {
+                                                        var mn = (md.itemName || md.itemCode) ? (md.itemName || md.itemCode) : 'item';
+                                                        showMessage('Packed item "' + mn + '" cannot be deleted as part of merge.');
+                                                    } catch (e) { alert('Packed items cannot be deleted as part of merge.'); }
+                                                    continue;
+                                                }
+                                                matches[i].delete();
+                                            } catch (e) { }
+                                        }
+
+                                        // update totals and refresh
+                                        recalcTotals();
+                                        try { tbl.redraw(true); } catch (e) { }
+
+                                        // refresh detailed description using baseUnits (lowest-level)
+                                        fetch(getItemStockDescUrl + '?itemId=' + encodeURIComponent(itemId) + '&quantity=' + encodeURIComponent(baseUnits)).then(function(r) { return r.json(); }).then(function(js) { try { if (js && js.success) primary.update({ detailed: js.data || '' }); } catch (e) { } }).catch(function() { });
+                                    } catch (e) {
+                                        // fallback: if anything fails, just add a row
+                                        try { tbl.addRow(itm, true).then(function() { recalcTotals(); }); } catch (err) { }
+                                    }
+                                }).catch(function() { try { tbl.addRow(itm, true).then(function() { recalcTotals(); }); } catch (e) { } });
+                            } catch (e) {
+                                // fallback: attempt to add
+                                try { tbl.addRow(itm, true).then(function() { recalcTotals(); }); } catch (err) { }
+                            }
+                        });
+                    })
+                    .catch(function() {
+                        // on error, still add/update without detailed
+                        withTable(function(tbl) {
+                            try {
+                                // if editing, update the editing row here as well
+                                var editingRowId2 = $('#addItemBtn').data('editingRow') || null;
+                                if (editingRowId2) {
+                                    try {
+                                        var rowCompE = tbl.getRow(editingRowId2);
+                                        if (!rowCompE) {
+                                            var rowsTmp2 = tbl.getRows();
+                                            for (var zi = 0; zi < rowsTmp2.length; zi++) { var dd = rowsTmp2[zi].getData() || {}; if ((dd.__rowId || dd.rowId || null) === editingRowId2) { rowCompE = rowsTmp2[zi]; break; } }
+                                        }
+                                        if (rowCompE) {
+                                            // check for another row matching new itemId+itemType (other than the editing row)
+                                            var otherE = null;
+                                            try {
+                                                var allE = tbl.getRows();
+                                                for (var oi2 = 0; oi2 < allE.length; oi2++) {
+                                                    var dd2 = allE[oi2].getData() || {};
+                                                    var rid2 = (dd2.__rowId || dd2.rowId || null);
+                                                    if (rid2 && rid2 !== editingRowId2 && parseInt(dd2.itemId || 0, 10) === parseInt(itm.itemId || 0, 10) && parseInt(dd2.itemTypeId || 0, 10) === parseInt(itm.itemTypeId || 0, 10)) { otherE = allE[oi2]; break; }
+                                                }
+                                            } catch (e) { }
+
+                                            if (otherE) {
+                                                // replace otherE values with itm (update)
+                                                try {
+                                                    otherE.update({ itemId: itm.itemId, itemCode: itm.itemCode, itemName: itm.itemName, itemTypeId: itm.itemTypeId, itemTypeName: itm.itemTypeName, qtyPerType: itm.qtyPerType, quantity: itm.quantity, itemPrice: itm.itemPrice, detailed: itm.detailed, cgst: itm.cgst || 0, sgst: itm.sgst || 0, igst: itm.igst || 0 });
+                                                    try {
+                                                        var otcE = otherE.getCell('totalCost'); if (otcE && typeof otcE.setValue === 'function') {
+                                                            var displayQtyO2 = (Number(itm.quantity || 0) / Number(itm.qtyPerType || 1)) || 0;
+                                                            var pricePerTypeO2 = (Number(itm.itemPrice || 0) * Number(itm.qtyPerType || 1)) || 0;
+                                                            otcE.setValue((displayQtyO2 * getEffectivePricePerType(pricePerTypeO2)).toFixed(2));
+                                                        }
+                                                    } catch (e) { }
+                                                } catch (e) { }
+                                                // remove editing row
+                                                try { rowCompE.delete(); } catch (e) { }
+                                            } else {
+                                                // convert entered qty (type-units) to base-units using existing row's qtyPerType or entered
+                                                var existing = rowCompE.getData() || {};
+                                                var qtyPerExisting = Number(existing.qtyPerType || 1) || 1;
+                                                var newQtyBaseE = Math.max(0, Number(qty || 0) * qtyPerExisting);
+                                                var preservedPriceE = (existing.itemPrice !== undefined && existing.itemPrice !== null) ? existing.itemPrice : itm.itemPrice;
+                                                rowCompE.update({ quantity: newQtyBaseE, itemPrice: preservedPriceE, itemTypeId: itm.itemTypeId, itemTypeName: itm.itemTypeName, qtyPerType: qtyPerExisting });
+                                                try {
+                                                    var ftcE = rowCompE.getCell('totalCost'); if (ftcE && typeof ftcE.setValue === 'function') {
+                                                        var displayQtyE = (Number(newQtyBaseE || 0) / qtyPerExisting) || 0;
+                                                        var pricePerTypeE = (Number(preservedPriceE || 0) * qtyPerExisting) || 0;
+                                                        ftcE.setValue((displayQtyE * getEffectivePricePerType(pricePerTypeE)).toFixed(2));
+                                                    }
+                                                } catch (e) { }
+                                            }
+                                            recalcTotals(); try { tbl.redraw(true); } catch (e) { }
+                                        }
+                                    } catch (ee) { }
+                                    // clear editing
+                                    // clear editing state and reset UI
+                                    clearEditingState();
+                                    return;
+                                }
+                                var rows = tbl.getRows();
+                                var found = null;
+                                for (var i = 0; i < rows.length; i++) {
+                                    var d = rows[i].getData();
+                                    var existingItemId = parseInt(d.itemId || 0, 10);
+                                    var existingTypeId = parseInt(d.itemTypeId || 0, 10);
+                                    var newItemId = parseInt(itemId || 0, 10);
+                                    var newTypeId = parseInt(itemTypeId || 0, 10);
+                                    if (existingItemId === newItemId && existingTypeId === newTypeId) { found = rows[i]; break; }
+                                }
+                                if (found) {
+                                    var d = found.getData();
+                                    var qtyPer = Number(d.qtyPerType || 1) || 1;
+                                    var addQtyBase = Number(qty || 0) * qtyPer;
+                                    var newQty = Number(d.quantity || 0) + addQtyBase;
+                                    var preservedPrice = (d.itemPrice !== undefined && d.itemPrice !== null) ? d.itemPrice : itm.itemPrice;
+                                    // compute totalCost for updated row
+                                    var discountPerItemVal2 = parseFloat((document.getElementById('discountPerItem') && document.getElementById('discountPerItem').value) || 0) || 0;
+                                    var displayQtyAfter = (Number(newQty || 0) / qtyPer) || 0;
+                                    var pricePerTypeAfter = (Number(preservedPrice || 0) * qtyPer) || 0;
+                                    var effectivePriceAfter = getEffectivePricePerType(pricePerTypeAfter);
+                                    var totalCostAfter = (displayQtyAfter * effectivePriceAfter).toFixed(2);
+                                    found.update({ quantity: newQty, itemPrice: preservedPrice, totalCost: totalCostAfter, cgst: itm.cgst || 0, sgst: itm.sgst || 0, igst: itm.igst || 0, changedPrice: itm.changedPrice || null, isPriceModified: !!itm.isPriceModified });
+                                    try { var ftc = found.getCell('totalCost'); if (ftc && typeof ftc.setValue === 'function') ftc.setValue(totalCostAfter); } catch (e) { }
+                                    recalcTotals();
+                                    try { tbl.redraw(true); } catch (e) { }
+                                } else {
+                                    try {
+                                        // assign sequential SlNo for new row
+                                        var existing = tbl.getData() || [];
+                                        itm.slNo = (existing.length || 0) + 1;
+                                    } catch (e) { itm.slNo = 0; }
+                                    tbl.addRow(itm, true).then(function() { recalcTotals(); });
+                                }
+                            } catch (e) { }
+                        });
+                    });
+
+                // clear inputs
+                // clear editing state and reset UI
+                clearEditingState();
+            });
+
+            // calculate item total on qty or cost change
+            function calcItemTotal() {
+                var q = parseFloat(document.getElementById('itemQty').value || '0');
+                var c = parseFloat(document.getElementById('itemCost').value || '0');
+                var t = (isNaN(q) || isNaN(c)) ? 0 : (q * c);
+                document.getElementById('itemTotal').value = t.toFixed(2);
+            }
+            document.getElementById('itemQty').addEventListener('input', calcItemTotal);
+            document.getElementById('itemCost').addEventListener('input', calcItemTotal);
+
+            // ensure balance recalculates live while typing amountPaid and when discount/state changes
+            try {
+                var amountPaidEl = document.getElementById('amountPaid');
+                if (amountPaidEl) amountPaidEl.addEventListener('input', function() { try { recalcTotals(); } catch (e) { } });
+            } catch (e) { }
+            try {
+                var discountPerItemEl = document.getElementById('discountPerItem');
+                if (discountPerItemEl) discountPerItemEl.addEventListener('input', function() { try { recalcTotals(); } catch (e) { } });
+            } catch (e) { }
+            try {
+                var discountPercEl = document.getElementById('discountPercentage');
+                if (discountPercEl) discountPercEl.addEventListener('input', function() { try { recalcTotals(); } catch (e) { } });
+            } catch (e) { }
+            try {
+                var stateRadios = document.querySelectorAll('input[name="stateType"]');
+                stateRadios.forEach(function(r) { r.addEventListener('change', function() { try { recalcTotals(); } catch (e) { } }); });
+            } catch (e) { }
+
+            // prefillItem implementation for Edit button in tabulator
+            window.prefillItem = function(rowData) {
+                if (!rowData) return;
+                // set inputs from row and focus
+                $('#itemSearch').val([rowData.itemCode, rowData.itemName].filter(Boolean).join(' - '));
+                $('#itemCode').val(rowData.itemCode || '');
+                $('#itemName').val(rowData.itemName || '');
+                // itemPrice is stored as base-unit price; show inputs in per-type terms
+                var qtyPerType = Number(rowData.qtyPerType || 1) || 1;
+                var displayQty = (Number(rowData.quantity || 0) / qtyPerType) || 0;
+                var pricePerType = (Number(rowData.itemPrice || 0) * qtyPerType) || 0;
+                $('#itemQty').val(displayQty);
+                $('#itemCost').val(pricePerType.toFixed(2));
+                $('#itemTotal').val((displayQty * pricePerType).toFixed(2));
+                // set itemId and itemType
+                $('#itemCode').data('itemId', rowData.itemId || 0);
+                if (rowData.itemTypeId) {
+                    $('#itemType').val(rowData.itemTypeId);
+                } else if (rowData.itemTypeName) {
+                    // try to select by text if id not present
+                    $('#itemType option').filter(function() { return $(this).text() === rowData.itemTypeName; }).prop('selected', true);
+                }
+                // do not change Add button or editing state when prefilling for edit
+                // scroll to top inputs
+                window.scrollTo(0, 0);
+            };
+
+            // add a programmatic Edit action for tabulator rows (mirror WinForms Edit button)
+            // Tabulator: create an Edit handler that can be invoked from a custom column formatter or by double-clicking a row
+            function attachRowEditHandler(tbl) {
+                try {
+                    tbl.on('rowDblClick', function(e, row) {
+                        try { var d = row.getData(); window.prefillItem(d); } catch (e) { }
+                    });
+                } catch (e) { }
+            }
+
+            // Hook attachment when table is available
+            withTable(function(t) { try { attachRowEditHandler(t); } catch (e) { } });
+
+            // Save as estimate
+            document.getElementById('generateInvoice').addEventListener('click', function(e) {
+                e.preventDefault();
+                var isEstimate = !document.getElementById('invoiceRadio').checked; // if invoice radio checked, isEstimate=false
+                // ensure discount defaults
+                var discountPerItem = parseFloat(document.getElementById('discountPerItem').value || '0') || 0;
+                var discountPercentage = parseFloat(document.getElementById('discountPercentage').value || '0') || 0;
+                var isInState = (document.querySelector('input[name="stateType"]:checked') || {}).value === 'in';
+
+                // --- Validation before save ---
+                try {
+                    if (!isEstimate && document.getElementById('billId').value == '') { alert('Direct invoice is not allowed. Generate Estimate first.'); return; }
+
+                    // customer type must be selected
+                    var customerTypeVal = (document.getElementById('customerType').value || '').toString();
+                    if (!customerTypeVal) { alert('Select Customer Type'); return; }
+
+                    // invoice number required for Invoice (not for Estimate)
+                    // var isInvoice = document.getElementById('invoiceRadio').checked;
+                    // if (isInvoice) {
+                    //     var invNo = (document.getElementById('invoiceNo').value || '').toString().trim();
+                    //     if (!invNo) { alert('Invoice number is required when generating an invoice'); return; }
+                    // }
+
+                    // discounts must be non-negative
+                    //if (discountPerItem < 0) { alert('Discount per item cannot be negative'); return; }
+                    if (discountPercentage < 0) { alert('Discount percentage cannot be negative'); return; }
+
+                    // items validation: at least one row and each row valid
+                    var rowsPreview = [];
+                    try { if (table && table.getData) rowsPreview = table.getData(); } catch (e) { rowsPreview = []; }
+                    if (!rowsPreview || rowsPreview.length === 0) { alert('Add at least one item before saving'); return; }
+                    for (var ri = 0; ri < rowsPreview.length; ri++) {
+                        var rr = rowsPreview[ri] || {};
+                        var iid = parseInt(rr.itemId || 0);
+                        var qty = parseFloat(rr.quantity || 0) || 0;
+                        var price = parseFloat(rr.itemPrice || 0) || 0;
+                        if (iid <= 0) { alert('One or more items are invalid (missing Item).'); return; }
+                        if (qty <= 0) { alert('Quantity must be greater than zero for all items'); return; }
+                        if (price < 0) { alert('Item price cannot be negative'); return; }
+                    }
+
+                    // customer identification: if no existing customer id, mobile must be 10 digits so we can create/find
+                    var customerIdEl = document.getElementById('customerId');
+                    var existingCustomerId = customerIdEl ? parseInt(customerIdEl.value || '0') : 0;
+                    var mobileStr = (document.getElementById('mobile').value || '').toString().trim();
+                    if (!existingCustomerId) {
+                        if (!mobileStr || mobileStr.length !== 10) { alert('Enter a 10-digit mobile number to fetch/create customer'); return; }
+                        // ensure digits only
+                        if (!/^\d{10}$/.test(mobileStr)) { alert('Mobile number must contain only digits'); return; }
+                    }
+                } catch (ve) { alert('Validation error'); return; }
+
+                // helper to build item DTOs from table rows
+                function buildItems() {
+                    var rows = [];
+                    try {
+                        if (table && table.getData)
+                            rows = table.getData();
+                    } catch (e) { rows = []; }
+                    return rows.map(function(r) {
+                        // OriginalCost: use r.originalCost if present else itemPrice per base unit
+                        var original = (r.originalCost !== undefined && r.originalCost !== null) ? Number(r.originalCost) : (Number(r.itemPrice || 0) || 0);
+                        // ItemPrice is the final price for bill (per base unit)
+                        var itemPriceFinal = Number(r.itemPrice || 0) || 0;
+                        // Preserve client-side price modification state for persistence.
+                        var changed = (r.changedPrice !== undefined && r.changedPrice !== null) ? Number(r.changedPrice) : null;
+                        var isModifiedFlag = !!r.isPriceModified;
+                        if (isModifiedFlag && changed === null) changed = itemPriceFinal;
+                        if (!isModifiedFlag) changed = null;
+                        console.log('r', r);
+                        return {
+                            SlNo: parseInt(r.slNo || 0),
+                            ItemId: parseInt(r.itemId || 0),
+                            ItemName: r.itemName || '',
+                            ItemTypeId: r.itemTypeId || 0,
+                            ItemPrice: itemPriceFinal,
+                             ItemCost: itemPriceFinal,
+                            Quantity: parseInt(r.quantity || 0) || 0,
+                             SellType: parseInt(r.sellType || r.itemTypeId || 0) || 0,
+                             SellQty: parseInt(r.sellQty || 0) || 0,
+                            OriginalCost: original,
+                            ChangedPrice: changed,
+                            IsPriceModified: !!isModifiedFlag,
+                            TotalCost: Number(r.totalCost || 0) || 0,
+                            // prefer sending percentages from client (cgst, sgst, igst stored as percent values on row)
+                            CgstPercent: Number(r.cgst || 0) || 0,
+                            SgstPercent: Number(r.sgst || 0) || 0,
+                            IgstPercent: Number(r.igst || 0) || 0,
+                            // keep absolute amounts for backward compatibility (server will compute amounts from percents)
+                            CgstAmount: Number(r.cgstAmount || 0) || 0,
+                            SgstAmount: Number(r.sgstAmount || 0) || 0,
+                            IgstAmount: Number(r.igstAmount || 0) || 0
+                        };
+                    });
+                }
+
+                // ensure we have a customer id: try hidden input #customerId first
+                var customerIdEl = document.getElementById('customerId');
+                var existingCustomerId = customerIdEl ? parseInt(customerIdEl.value) : 0;
+                var mobileVal = parseInt(document.getElementById('mobile').value || '0') || 0;
+                var mobile2Val = parseInt(document.getElementById('mobile2').value || '0') || 0;
+
+                function doSave(customerIdToUse) {
+                    // Do not pre-open a blank tab (causes about:blank resolution issues).
+                    // We'll open the preview URL in a new tab after the server responds.
+
+                    var payload = {
+                        BillId: parseInt(document.getElementById('billId').value || '0'),
+                        MobileNo: mobileVal,
+                        Mobile2: mobile2Val,
+                        //CustomerId: customerIdToUse || 0,
+                        CustomerType: parseInt(document.getElementById('customerType').value || '1'),
+                        IsEstimate: isEstimate,
+                        Name: document.getElementById('customerName').value || '',
+                        Address: document.getElementById('address').value || '',
+                        CustomerGstin: document.getElementById('customerGstin') ? document.getElementById('customerGstin').value || '' : '',
+                        InvoiceNo: document.getElementById('invoiceNo').value || '',
+                        // Include invoice header fields so controller can persist when converting estimate -> invoice
+                        Invoice: document.getElementById('invoiceNo') ? document.getElementById('invoiceNo').value || '' : '',
+                        POS: document.getElementById('pos') ? document.getElementById('pos').value || '' : '',
+                        StateCode: document.getElementById('stateCode') ? document.getElementById('stateCode').value || '' : '',
+                        Pincode: document.getElementById('pincode') ? document.getElementById('pincode').value || '' : '',
+                        Loc: document.getElementById('loc') ? document.getElementById('loc').value || '' : '',
+                         VehicleNo: document.getElementById('vehicleNo') ? document.getElementById('vehicleNo').value || '' : '',
+                         OwnerName: document.getElementById('ownerName') ? document.getElementById('ownerName').value || '' : '',
+                         EWayBillNo: document.getElementById('eWayBillNo') ? document.getElementById('eWayBillNo').value || '' : '',
+                        AmountPaid: parseFloat(document.getElementById('amountPaid').value || '0') || 0,
+                        BalanceAmount: parseFloat(document.getElementById('balanceAmount').value || '0') || 0,
+                        DiscountPerItem: discountPerItem,
+                        DiscountPercentage: discountPercentage,
+                        IsInState: isInState,
+                        Items: buildItems()
+                    };
+
+                    var postBillingUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Url.Action("FireWorksBilling", "Billing")));
+                    fetch(postBillingUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+                        .then(function(r) { return r.json(); })
+                        .then(function(resp) {
+                            if (resp && resp.success) {
+                                alert('Bill generated successfully');
+                                if (resp.billId) {
+                                    document.getElementById('billId').value = resp.billId;
+                                    try { toggleInvoiceDetails(); updateGenerateButton(); } catch (e) { }
+                                }
+
+                                // Handle preview in new tab and optional redirect for edits
+                                try {
+                                    var rawPreview = '';
+                                    if (resp.previewUrl && resp.previewUrl.toString) rawPreview = resp.previewUrl.toString();
+                                    if ((!rawPreview || !rawPreview.trim()) && resp && resp.billId) {
+                                        try {
+                                            var tmpl = isEstimate ? 'Estimate' : (isInState ? 'InvoiceInState' : 'InvoiceOutOfState');
+                                            rawPreview = previewPdfBaseUrl + '?billId=' + encodeURIComponent(resp.billId) + '&template=' + encodeURIComponent(tmpl);
+                                        } catch (ce) { rawPreview = ''; }
+                                    }
+
+                                    if (rawPreview && rawPreview.trim()) {
+                                        var absPreviewUrl = rawPreview;
+                                        try { absPreviewUrl = new URL(rawPreview, window.location.origin).toString(); } catch (uerr) { absPreviewUrl = rawPreview; }
+                                        // Try to open preview in a new tab
+                                        var newWin = null;
+                                        try { newWin = window.open(absPreviewUrl, '_blank'); if (newWin) try { newWin.focus(); } catch (e) { } } catch (e) { newWin = null; }
+                                        // If this save is an invoice conversion (not an estimate) and server returned a billId, redirect to View Bills after opening preview
+                                        try {
+                                            if (!isEstimate && resp && resp.billId && Number(resp.billId) > 0) {
+                                                try { window.location = viewBillsUrl.toString ? viewBillsUrl.toString() : viewBillsUrl; return; } catch (e) { try { window.location = viewBillsUrl; return; } catch (ee) { /* ignore */ } }
+                                            }
+                                        } catch (e) { /* ignore redirect errors */ }
+                                        // If server explicitly provided redirectUrl, honor it (fallback)
+                                        if (resp.redirectUrl) {
+                                            try { window.location = resp.redirectUrl.toString(); return; } catch (e) { try { window.location = resp.redirectUrl; return; } catch (ee) { /* ignore */ } }
+                                        }
+                                    } else {
+                                        // No preview URL available; if server provided redirectUrl, navigate current window
+                                        if (!isEstimate && resp && resp.billId && Number(resp.billId) > 0) {
+                                            try { window.location = viewBillsUrl.toString ? viewBillsUrl.toString() : viewBillsUrl; return; } catch (e) { try { window.location = viewBillsUrl; return; } catch (ee) { /* ignore */ } }
+                                        }
+                                        if (resp.redirectUrl) {
+                                            try { window.location = resp.redirectUrl.toString(); return; } catch (e) { try { window.location = resp.redirectUrl; return; } catch (ee) { /* ignore */ } }
+                                        }
+                                    }
+                                } catch (e) { console.warn('Error handling preview/redirect', e); }
+
+                                // clear table and reset form to new bill (only if not redirected)
+                                try { if (table) safeClearTable(table); } catch (e) { }
+                                // reset fields
+                                try { document.getElementById('customerName').value = ''; } catch (e) { }
+                                try { document.getElementById('address').value = ''; } catch (e) { }
+                                try { document.getElementById('invoiceNo').value = ''; } catch (e) { }
+                                try { document.getElementById('billAmount').value = '0'; } catch (e) { }
+                                try { document.getElementById('billId').value = '0'; } catch (e) { }
+                                try { document.getElementById('discountPerItem').value = '0'; } catch (e) { }
+                                try { document.getElementById('discountPercentage').value = '0'; } catch (e) { }
+                                try { document.getElementById('cgst').value = '0'; } catch (e) { }
+                                try { document.getElementById('sgst').value = '0'; } catch (e) { }
+                                try { document.getElementById('igst').value = '0'; } catch (e) { }
+                                // clear amount paid and balance
+                                try { document.getElementById('amountPaid').value = '0'; } catch (e) { }
+                                try { document.getElementById('balanceAmount').value = '0'; } catch (e) { }
+                                // clear customer id hidden
+                                try { if (customerIdEl) customerIdEl.value = ''; } catch (e) { }
+                                // re-enable customer type dropdown for next bill
+                                try { document.getElementById('customerType').disabled = false; document.getElementById('customerType').value = ''; } catch (e) { }
+                                // reset invoice selection to Estimate
+                                try { document.getElementById('estimateRadio').checked = true; document.getElementById('invoiceRadio').checked = false; toggleInvoiceDetails(); updateGenerateButton(); } catch (e) { }
+                                try { document.getElementById('mobile').value = ''; } catch (e) { }
+                                try { document.getElementById('taxableAmount').value = ''; } catch (e) { }
+                                try { document.getElementById('totalBillAmount').value = '0'; } catch (e) { }
+
+                            } else {
+                                alert('Error: ' + (resp && resp.message));
+                            }
+                        })
+                        .catch(function() { alert('Error saving billing'); });
+                }
+
+                // if customer id already present, use it
+                if (existingCustomerId && existingCustomerId > 0) { doSave(existingCustomerId); return; }
+
+                // Do not perform a GetCustomerByMobile lookup in the save flow.
+                // Customer lookup is already performed by the mobile input listener when the user types 10 digits.
+                // If there is no resolved customer id here, proceed with save flow using customerId = 0
+                doSave(0);
+                return;
+
+                // fallback: proceed without fetching when mobile not 10 chars
+                doSave(0);
+            });
+
+            document.getElementById('clearForm').addEventListener('click', function(e) {
+                e.preventDefault();
+                try { if (table && table.clearData) table.clearData(); } catch (e) { }
+                document.getElementById('customerName').value = ''; document.getElementById('address').value = ''; document.getElementById('invoiceNo').value = ''; document.getElementById('billAmount').value = '0'; document.getElementById('billId').value = '0';
+                try { document.getElementById('mobile').value = ''; } catch (e) { }
+                try { document.getElementById('taxableAmount').value = '0'; } catch (e) { }
+                try { document.getElementById('discountPerItem').value = '0'; document.getElementById('discountPercentage').value = '0'; } catch (e) { }
+                try { document.getElementById('amountPaid').value = '0'; document.getElementById('balanceAmount').value = '0'; } catch (e) { }
+                try { document.getElementById('cgst').value = '0'; document.getElementById('sgst').value = '0'; document.getElementById('igst').value = '0'; } catch (e) { }
+                try { document.getElementById('customerType').disabled = false; document.getElementById('customerType').value = ''; } catch (e) { }
+                try { document.getElementById('estimateRadio').checked = true; document.getElementById('invoiceRadio').checked = false; toggleInvoiceDetails(); updateGenerateButton(); } catch (e) { }
+            });
+
+            // update totals when cell edited
+            withTable(function(tbl) {
+                try { tbl.on('cellEdited', function(cell) { recalcTotals(); }); } catch (e) { }
+            });
+        });
+    </script>
+}

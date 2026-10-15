@@ -1,0 +1,35 @@
+/* ================================
+   DARK THEME - Colors & Variables
+================================ */
+
+:root {
+    /* Primary Colors */
+    --color-bg-primary: #0d0b09;
+    --color-bg-secondary: #1a1810;
+    --color-bg-tertiary: #2a2820;
+
+    /* Text Colors */
+    --color-text-primary: #fff;
+    --color-text-secondary: #e0e0e0;
+    --color-text-muted: #888;
+    --color-text-hint: #999;
+
+    /* Accent Colors */
+    --color-accent-primary: #00d4ff;
+    --color-accent-secondary: #00a8cc;
+    --color-accent-warning: #ffd700;
+
+    /* Border Colors */
+    --color-border-primary: #1a1a1a;
+    --color-border-secondary: #2a2820;
+    --color-border-light: #3a3a30;
+
+    /* Page Background */
+    --page-bg: #0d0b09;
+}
+
+html,
+body {
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+}

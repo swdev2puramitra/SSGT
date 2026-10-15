@@ -1,0 +1,174 @@
+/* ================================
+   UTILITIES - Spacing, Typography, Alignment
+================================ */
+
+/* Margin Utilities */
+.m-0 {
+    margin: 0 !important;
+}
+
+.mb-0 {
+    margin-bottom: 0 !important;
+}
+
+.mb-2 {
+    margin-bottom: 0.5rem !important;
+}
+
+.mt-1 {
+    margin-top: 0.25rem !important;
+}
+
+.mt-3 {
+    margin-top: 1rem !important;
+}
+
+.me-2 {
+    margin-right: 0.5rem !important;
+}
+
+.mt-0 {
+    margin-top: 0 !important;
+}
+
+.mb-3 {
+    margin-bottom: 1rem !important;
+}
+
+
+/* Padding Utilities */
+.p-0 {
+    padding: 0 !important;
+}
+
+.px-2 {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+}
+
+.py-2 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+}
+
+
+/* Text Utilities */
+.text-muted {
+    color: var(--color-text-muted) !important;
+}
+
+.text-secondary {
+    color: var(--color-text-secondary) !important;
+}
+
+.text-accent {
+    color: var(--color-accent-primary) !important;
+}
+
+.text-center {
+    text-align: center !important;
+}
+
+.text-end {
+    text-align: right !important;
+}
+
+.text-start {
+    text-align: left !important;
+}
+
+.fw-bold {
+    font-weight: 700 !important;
+}
+
+.fw-600 {
+    font-weight: 600 !important;
+}
+
+.fw-500 {
+    font-weight: 500 !important;
+}
+
+
+/* Display Utilities */
+.d-flex {
+    display: flex !important;
+}
+
+.d-grid {
+    display: grid !important;
+}
+
+.d-none {
+    display: none !important;
+}
+
+.d-block {
+    display: block !important;
+}
+
+
+/* Flex Utilities */
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.gap-2 {
+    gap: 0.5rem !important;
+}
+
+.gap-3 {
+    gap: 1rem !important;
+}
+
+
+/* Border Utilities */
+.border-bottom {
+    border-bottom: 1px solid var(--color-border-secondary) !important;
+}
+
+
+/* Opacity Utilities */
+.opacity-50 {
+    opacity: 0.5 !important;
+}
+
+.opacity-75 {
+    opacity: 0.75 !important;
+}
+
+
+/* Width Utilities */
+.w-100 {
+    width: 100% !important;
+}
+
+.max-width-fit {
+    max-width: fit-content;
+}
+
+
+/* Height Utilities */
+.h-auto {
+    height: auto !important;
+}
+
+
+/* Hidden Print Utility */
+.hidden-print {
+    display: block;
+}
+
+@media print {
+    .hidden-print {
+        display: none !important;
+    }
+}

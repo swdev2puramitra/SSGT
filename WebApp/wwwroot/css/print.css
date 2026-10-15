@@ -1,0 +1,159 @@
+/* ================================
+   PRINT STYLES
+================================ */
+
+@media print {
+    /* Hide non-printable elements */
+    .navbar-header,
+    .custom-navbar,
+    .navbar,
+    .btn-print,
+    .packing-actions,
+    .hidden-print,
+    footer {
+        display: none !important;
+    }
+
+    /* Page & Container Styles */
+    body,
+    html {
+        background: #fff;
+        color: #000;
+        margin: 0;
+        padding: 0;
+    }
+
+    .packing-dashboard {
+        background: #fff;
+        color: #000;
+        padding: 0;
+        min-height: auto;
+        margin: 0;
+        margin-top: 0;
+    }
+
+    /* Header */
+    .dashboard-header {
+        margin-top: 0;
+        padding-top: 0;
+        border-bottom: 2px solid #333;
+    }
+
+        .dashboard-header h3 {
+            color: #000;
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+    .header-top {
+        margin-bottom: 6px;
+    }
+
+    .bill-info {
+        color: #333;
+    }
+
+        .bill-info .label {
+            color: #555;
+        }
+
+        .bill-info .value {
+            color: #000;
+            font-weight: 600;
+        }
+
+    /* Grid & Sections */
+    .godowns-grid {
+        gap: 8px;
+    }
+
+    .godown-section {
+        background: #fff;
+        border: 1px solid #ccc;
+        page-break-inside: avoid;
+    }
+
+    .godown-header {
+        background: #f5f5f5;
+        border-bottom: 1px solid #999;
+    }
+
+        .godown-header h4 {
+            color: #000;
+        }
+
+        .godown-header .case-count {
+            color: #666;
+        }
+
+    /* Tables */
+    .packing-table {
+        font-size: 11px;
+        border-collapse: collapse;
+    }
+
+        .packing-table thead {
+            background: #f9f9f9;
+        }
+
+            .packing-table thead th {
+                border-bottom: 2px solid #333;
+                color: #000;
+                font-weight: 700;
+                background: #f9f9f9;
+            }
+
+        .packing-table tbody tr {
+            page-break-inside: avoid;
+        }
+
+            .packing-table tbody td {
+                border-bottom: 1px solid #ddd;
+                color: #000;
+            }
+
+        .packing-table td.stock-info {
+            color: #333;
+        }
+
+        .packing-table td.checkbox-cell {
+            width: 40px;
+        }
+
+            .packing-table td.checkbox-cell input[type="checkbox"],
+            .packing-table td.checkbox-cell .checkmark-icon {
+                width: 16px;
+                height: 16px;
+            }
+
+    /* Alerts */
+    .alert {
+        border: 1px solid #ccc;
+        background: #f9f9f9;
+        color: #333;
+    }
+
+    /* Buttons */
+    .packing-actions {
+        display: none !important;
+    }
+
+    /* Links */
+    a {
+        color: #000;
+        text-decoration: underline;
+    }
+
+    /* Ensure no overflow */
+    * {
+        overflow: visible !important;
+    }
+}
+
+
+@media print {
+    @page {
+        margin: 1cm;
+        size: A4;
+    }
+}

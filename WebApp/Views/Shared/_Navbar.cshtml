@@ -1,0 +1,168 @@
+@using WebApp.Models;
+@{
+    var userMenus = ViewBag.UserMenus as List<MenuDTO> ?? new List<MenuDTO>();
+}
+
+<!-- Responsive Navbar with Dynamic Menus -->
+<header class="navbar-header">
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <!-- Brand/Logo -->
+            <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                <span class="brand-icon">⚡</span>
+                <span class="brand-text">Sai Ganesh Traders</span>
+            </a>
+
+            <!-- Mobile Toggle Button -->
+            <div class="navbar-mobile-actions d-lg-none">
+                <!-- User Menu Icon (Mobile) -->
+                @if (User?.Identity?.IsAuthenticated == true)
+                {
+                    <button class="btn-user-mobile" type="button" data-bs-toggle="offcanvas" data-bs-target="#userMenuMobile" aria-controls="userMenuMobile">
+                        <span class="user-initial">@(User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value?.First() ?? 'U')</span>
+                    </button>
+                }
+
+                <!-- Navbar Toggle -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+
+            <!-- Main Navigation -->
+            <div class="navbar-collapse collapse">
+                <ul class="navbar-nav ms-auto">
+                    @if (User?.Identity?.IsAuthenticated == true)
+                    {
+                        <!-- Dashboard (Home) - Always visible -->
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">
+                                <span class="me-1">📊</span>Dashboard
+                            </a>
+                        </li>
+
+                        <!-- Dynamic Menus from Database -->
+                        @foreach (var menu in userMenus)
+                        {
+                            @if (menu.HasChildren)
+                            {
+                                <!-- Parent menu with children (dropdown) -->
+                                <!-- Note: Returns "#" from GetUrl() - prevents navigation, shows children on click -->
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="@menu.GetUrl()" id="navbarDropdown@(menu.MenuId)" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        @if (!string.IsNullOrEmpty(menu.MenuIcon))
+                                        {
+                                            <span class="me-1">@Html.Raw(menu.MenuIcon)</span>
+                                        }
+                                        @menu.MenuName
+                                    </a>
+                                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown@(menu.MenuId)">
+                                        @foreach (var child in menu.Children)
+                                        {
+                                            @if (child.ParentId == menu.MenuId)
+                                            {
+                                                <li>
+                                                    <!-- Child menu: GetUrl() returns actual URL or UnderConstruction redirect -->
+                                                    <a class="dropdown-item" href="@child.GetUrl()" title="@child.MenuDescription">
+                                                        @if (!string.IsNullOrEmpty(child.MenuIcon))
+                                                        {
+                                                            <span class="me-2">@Html.Raw(child.MenuIcon)</span>
+                                                        }
+                                                        @child.MenuName
+                                                    </a>
+                                                </li>
+                                            }
+                                        }
+                                    </ul>
+                                </li>
+                            }
+                            else
+                            {
+                                <!-- Single menu item (no children) -->
+                                <!-- GetUrl() returns actual URL or UnderConstruction redirect if MenuUrl/FormName is null -->
+                                <li class="nav-item">
+                                    <a class="nav-link" href="@menu.GetUrl()" title="@menu.MenuDescription">
+                                        @if (!string.IsNullOrEmpty(menu.MenuIcon))
+                                        {
+                                            <span class="me-1">@Html.Raw(menu.MenuIcon)</span>
+                                        }
+                                        @menu.MenuName
+                                    </a>
+                                </li>
+                            }
+                        }
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Account" asp-action="Login">Login</a>
+                        </li>
+                    }
+                </ul>
+
+                <!-- User Profile Dropdown (Desktop) -->
+                @if (User?.Identity?.IsAuthenticated == true)
+                {
+                    <div class="navbar-user-profile d-lg-flex">
+                        <span class="user-badge">
+                            <span class="user-avatar">@(User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value?.First() ?? 'U')</span>
+                            <span class="user-name">@User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value</span>
+                        </span>
+                        <div class="dropdown">
+                            <button class="btn-user-menu" type="button" id="userMenuDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                ⋮
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuDropdown">
+                                <li><a class="dropdown-item" href="#">Profile Settings</a></li>
+                                <li><a class="dropdown-item" href="#">Change Password</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" asp-controller="Account" asp-action="Logout" class="d-inline">
+                                        <button type="submit" class="dropdown-item text-danger">Logout</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </nav>
+</header>
+
+<!-- Mobile User Menu Offcanvas -->
+@if (User?.Identity?.IsAuthenticated == true)
+{
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="userMenuMobile" aria-labelledby="userMenuMobileLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="userMenuMobileLabel">User Menu</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <!-- User Info Card -->
+            <div class="user-info-card mb-4">
+                <div class="user-avatar-large">@(User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value?.First() ?? 'U')</div>
+                <h6 class="mt-3">@User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value</h6>
+                <p class="text-muted small">@User.FindFirst("ContactNo")?.Value</p>
+            </div>
+
+            <!-- Mobile Menu Items -->
+            <div class="mobile-menu-items">
+                <a href="#" class="mobile-menu-item">
+                    <span class="mi-icon">👤</span>
+                    <span>Profile Settings</span>
+                </a>
+                <a href="#" class="mobile-menu-item">
+                    <span class="mi-icon">🔐</span>
+                    <span>Change Password</span>
+                </a>
+                <form method="post" asp-controller="Account" asp-action="Logout">
+                    <button type="submit" class="mobile-menu-item w-100 btn btn-danger">
+                        <span class="mi-icon">🚪</span>
+                        <span>Logout</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+}

@@ -1,0 +1,466 @@
+@{
+    ViewData["Title"] = "Stock Transfer";
+    var godowns = ViewBag.Godowns as List<WebApp.Models.FwMasterGodown> ?? new List<WebApp.Models.FwMasterGodown>();
+}
+
+<div class="container-fluid mt-0 mb-1">
+    <div class="dashboard-header">
+        <h3>Stock Transfer</h3>
+    </div>
+    @*    <div class="row">
+        <div class="col-12 text-center">
+            <h3>Sai Ganesh Traders</h3>
+            <h5>Stock Transfer</h5>
+        </div>
+        <div class="col-12 text-end">
+            <small>Date @ViewBag.Today</small>
+        </div>
+    </div> *@
+
+    <div class="row mt-1">
+        <div class="col-md-6">
+
+            <label>From Godown</label>
+            <select id="fromGodown" class="form-control">
+                <option value="">-- Select --</option>
+                @foreach (var g in godowns)
+                {
+                    <option value="@g.Id" data-address="@g.Address">@g.GodownDescription</option>
+                }
+            </select>
+
+            <div class="mt-1"><small id="fromAddress" class="address-text">Address</small></div>
+        </div>
+
+        <div class="col-md-6">
+            <label>To Godown</label>
+            <select id="toGodown" class="form-control godown-select" aria-label="To Godown">
+                <option value="">-- Select --</option>
+                @foreach (var g in godowns)
+                {
+                    <option value="@g.Id" data-address="@g.Address">@g.GodownDescription</option>
+                }
+            </select>
+
+            <div class="mt-1"><small id="toAddress" class="address-text">Address</small></div>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-12">
+            <div class="tabulator-wrapper mx-auto" style="max-width:1000px;padding:0 8px;">
+                <div id="itemsGrid"></div>
+            </div>
+
+            <div class="action-bar text-center mt-1" role="toolbar" aria-label="Stock transfer actions">
+                <button id="addRowBtn" class="btn btn-sm btn-primary" style="background:#29a3ff;border-color:#1f8fd6;font-size:1rem;padding:6px 12px;margin-left:8px;" aria-label="Add Item" title="Add Item">
+                    <span aria-hidden="true" style="font-weight:600;margin-right:6px;">＋</span> Add Item
+                </button>
+                <button id="saveTransfer" class="btn btn-sm btn-success" style="font-size:1rem;padding:6px 12px;margin-left:8px;" aria-label="Save Transfer" title="Save Transfer">
+                    <span aria-hidden="true" style="font-weight:600;margin-right:6px;">✔</span> Save Transfer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("~/Views/Shared/_TabulatorScripts.cshtml")
+    @* jQuery UI required for autocomplete in Item Name editor *@
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css" />
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <!-- CSS moved to ~/wwwroot/css/index.css per project guidelines -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var container = document.getElementById('itemsGrid');
+            container.innerHTML = '<div id="itemsTable"></div>';
+
+            var rowItemTypes = {}; // keyed by itemId -> array of types
+
+            // Prefill data from server if present
+            var _transferJson = @Html.Raw(ViewBag.TransferJson ?? "null");
+            var initialData = [];
+            try {
+                if (_transferJson && Array.isArray(_transferJson.items)) {
+                    initialData = _transferJson.items.map(function(it, idx) {
+                        return {
+                            sl: idx + 1,
+                            itemId: it.itemId || 0,
+                            itemName: it.itemName || '',
+                            itemTypeId: it.itemTypeId || null,
+                            itemPrice: (typeof it.itemPrice !== 'undefined') ? it.itemPrice : '',
+                            quantity: (typeof it.quantity !== 'undefined') ? it.quantity : '',
+                            qtyLowest: (typeof it.qtyLowest !== 'undefined') ? it.qtyLowest : 0,
+                            stockDesc: ''
+                        };
+                    });
+                }
+            } catch (e) { console.warn('prefill parse error', e); }
+            try {
+                if (_transferJson && _transferJson.itemTypes) {
+                    for (var k in _transferJson.itemTypes) {
+                        if (!_transferJson.itemTypes.hasOwnProperty(k)) continue;
+                        var keyNum = parseInt(k, 10);
+                        if (!isNaN(keyNum)) rowItemTypes[keyNum] = _transferJson.itemTypes[k];
+                        else rowItemTypes[k] = _transferJson.itemTypes[k];
+                    }
+                }
+            } catch (e) { console.warn('populate item types failed', e); }
+            
+            TabulatorHelper.createTabulator('#itemsTable', {
+                data: initialData,
+                pagination: false,
+                // fitDataStretch lets columns size to content but stretch to available space to avoid horizontal scroll
+                layout: 'fitDataStretch',
+                responsiveLayout: 'collapse',
+                variableHeight: true,
+                autoResize: true,
+                columns: [
+                    { title: 'Sl', formatter: 'rownum', width: 60, hozAlign: 'center' },
+                    { title: 'Item Id', field: 'itemId', visible: false },
+                    {
+                        title: 'Item Name', field: 'itemName', width: 420, editor: function(cell, onRendered, success, cancel) {
+                            var input = document.createElement('input');
+                            input.type = 'text';
+                            input.className = 'form-control';
+                            input.value = cell.getValue() || '';
+
+                            onRendered(function() {
+                                input.focus();
+                                $(input).autocomplete({
+                                    source: function(request, response) {
+                                        var fromGodown = document.getElementById('fromGodown').value;
+                                        fetch('@Url.Action("GetItems", "Billing")?q=' + encodeURIComponent(request.term)+"&godownId="+fromGodown).then(function(r) { return r.json(); }).then(function(resp) {
+                                            var items = (resp && resp.success) ? (resp.data || []) : [];
+                                            response(items.map(function(it) { return { label: (it.itemName || '') + ' · ' + (it.itemCode || ''), value: it.itemName, itemId: it.itemId, itemPrice: (it.itemPrice || it.ItemPrice || 0) }; }));
+                                        }).catch(function() { response([]); });
+                                    },
+                                    minLength: 1,
+                                    delay: 200,
+                                    select: function(event, ui) {
+                                        try {
+                                            var row = cell.getRow();
+                                            var all = cell.getTable().getData();
+                                            var duplicate = all.some(function(r) { return r.itemId == ui.item.itemId && r !== row.getData(); });
+                                            if (duplicate) { alert('This item is already added in another row.'); return; }
+                                            success(ui.item.value);
+                                            row.update({ itemId: ui.item.itemId, itemPrice: ui.item.itemPrice, itemTypeId: null });
+                                            fetch('@Url.Action("GetItemTypes", "Billing")?itemId=' + ui.item.itemId).then(function(r) { return r.json(); }).then(function(resp) {
+                                                var opts = (resp && resp.success) ? (resp.data || []) : [];
+                                                rowItemTypes[ui.item.itemId] = opts;
+                                            }).catch(function() { rowItemTypes[ui.item.itemId] = []; });
+                                        } catch (e) { console.warn('autocomplete select failed', e); }
+                                    }
+                                });
+                            });
+
+                            input.addEventListener('blur', function() {
+                                setTimeout(function() {
+                                    if (document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('ui-menu-item')) return;
+                                    try { success(input.value); } catch (e) { }
+                                }, 150);
+                            });
+
+                            return input;
+                        }
+                    },
+                    {
+                        title: 'Item Type',
+                        field: 'itemTypeId',
+                        width: 150,
+                        editor: function(cell, onRendered, success, cancel){
+                            // custom select editor so it uses site form styles
+                            var row = cell.getRow().getData();
+                            var itemId = row.itemId || 0;
+                            var select = document.createElement('select');
+                            select.className = 'form-control form-select';
+                            // placeholder option
+                            var ph = document.createElement('option'); ph.value=''; ph.text='-- Select --'; select.appendChild(ph);
+                            function populate(opts){
+                                // clear existing (keep placeholder)
+                                select.length = 1;
+                                opts.forEach(function(o){ var op = document.createElement('option'); op.value = o.itemTypeId; op.text = o.typeName; select.appendChild(op); });
+                                // set current value
+                                try { select.value = cell.getValue() || ''; } catch(e){}
+                            }
+                            var opts = rowItemTypes[itemId] || [];
+                            if (opts && opts.length) populate(opts);
+                            else if (itemId && itemId > 0) {
+                                // fetch types on demand
+                                fetch('@Url.Action("GetItemTypes","Billing")?itemId=' + itemId).then(function(r){ return r.json(); }).then(function(resp){ var list = (resp && resp.success) ? (resp.data || []) : []; rowItemTypes[itemId] = list; populate(list); }).catch(function(){ populate([]); });
+                            }
+
+                            onRendered(function(){ select.focus(); });
+
+                            select.addEventListener('change', function(){
+                                // when item type changes, update the row quantity based on stored qtyLowest if available
+                                try {
+                                    var rowData = cell.getRow().getData() || {};
+                                    var lowest = rowData.qtyLowest || 0;
+                                    var sel = select.options[select.selectedIndex];
+                                    var qpt = sel && sel.dataset && sel.dataset.qtyper ? parseInt(sel.dataset.qtyper, 10) : 0;
+                                    var newQty = rowData.quantity || 0;
+                                    if (lowest > 0 && qpt > 0) {
+                                        newQty = Math.floor(parseInt(lowest, 10) / qpt);
+                                    }
+                                    success(select.value);
+                                    // also update displayed quantity
+                                    try { cell.getRow().update({ quantity: newQty }); } catch(e) {}
+                                } catch(e){ success(select.value); }
+                            });
+                            select.addEventListener('blur', function(){ success(select.value); });
+
+                            return select;
+                        },
+                        formatter: function(cell){
+                            var v = cell.getValue();
+                            if (!v) return '';
+                            var items = rowItemTypes[cell.getRow().getData().itemId] || [];
+                            var found = items.find(function(x){ return String(x.itemTypeId) == String(v); });
+                            return found ? found.typeName : v;
+                        }
+                    },
+                    { title: 'Quantity', field: 'quantity', editor: 'input', hozAlign: 'right', width: 100, headerSort: false },
+                    { title: 'Stock', field: 'stockDesc', width: 170, hozAlign: 'left', headerSort: false },                    
+                    {
+                        title: 'Price', field: 'itemPrice', hozAlign: 'right', editor: 'input', width: 100, formatter: function(cell){ var v = cell.getValue(); return (v === null || v === undefined || v === '') ? '' : v; }, visible: false, headerSort: false
+                    },
+                    {
+                        title: 'Actions', hozAlign: 'center', formatter: function(cell) {
+                            var btn = document.createElement('button');
+                            btn.className = 'btn btn-sm btn-danger';
+                            btn.textContent = '🗑';
+                            btn.style.width = '28px';
+                            btn.style.height = '24px';
+                            btn.addEventListener('click', function() { cell.getRow().delete(); });
+                            return btn;
+                        }, width: 40, headerSort: false
+                    }
+                ],
+                cellEditing: function(cell) {
+                    try {
+                        if (cell.getField() !== 'itemName') return;
+                        var input = cell.getElement().querySelector('input');
+                        if (!input) return;
+                        var $inp = $(input).addClass('form-control');
+                        $inp.autocomplete({
+                            source: function(request, response) {
+                                fetch('@Url.Action("GetItems", "Billing")?q=' + encodeURIComponent(request.term)).then(r => r.json()).then(function(resp) {
+                                    var items = (resp && resp.success) ? (resp.data || []) : [];
+                                    response(items.map(function(it) { return { label: (it.itemName || '') + ' · ' + (it.itemCode || ''), value: it.itemName, itemId: it.itemId, itemPrice: it.itemPrice }; }));
+                                }).catch(function() { response([]); });
+                            },
+                            minLength: 1,
+                            delay: 200,
+                            select: function(event, ui) {
+                                var row = cell.getRow();
+                                var all = cell.getTable().getData();
+                                var duplicate = all.some(function(r) { return r.itemId == ui.item.itemId && r !== row.getData(); });
+                                if (duplicate) { alert('This item is already added in another row.'); return; }
+                                row.update({ itemId: ui.item.itemId, itemPrice: ui.item.itemPrice });
+                                fetch('@Url.Action("GetItemTypes", "Billing")?itemId=' + ui.item.itemId).then(r => r.json()).then(function(resp) {
+                                    var opts = (resp && resp.success) ? (resp.data || []) : [];
+                                    rowItemTypes[ui.item.itemId] = opts;
+                                    row.update({ itemTypeId: null });
+                                }).catch(function() { rowItemTypes[ui.item.itemId] = []; });
+                            }
+                        });
+                    } catch (e) { /* ignore */ }
+                }
+            }).then(function(table) {
+                window._stockTransferTable = table;
+
+                function fetchStockDesc(itemId, qty) {
+                    if (!itemId || parseInt(itemId) <= 0) return Promise.resolve('');
+                    var url = '@Url.Action("GetItemStockDesc","Billing")?itemId=' + encodeURIComponent(itemId) + '&quantity=' + encodeURIComponent(qty || 0);
+                    console.log('fetchStockDesc: ', url);
+                    return fetch(url).then(function(r){
+                        console.log('fetchStockDesc response status', r.status);
+                        return r.json();
+                    }).then(function(resp){ console.log('fetchStockDesc resp', resp); return (resp && resp.success) ? (resp.data || '') : ''; }).catch(function(err){ console.warn('fetchStockDesc failed', err); return ''; });
+                }
+
+                function populateStockForRow(row) {
+                    try {
+                        var d = row.getData();
+                        var itemId = parseInt(d.itemId || 0);
+                        var lowest = parseInt(d.qtyLowest || 0);
+                        if (!lowest && d.itemTypeId && d.quantity) {
+                            // if qtyLowest not provided, try compute using available type's qtyPerType
+                            var types = rowItemTypes[itemId] || [];
+                            var t = types.find(function(x){ return String(x.itemTypeId) == String(d.itemTypeId); });
+                            var qpt = t && t.qtyPerType ? parseInt(t.qtyPerType) : 0;
+                            if (qpt > 0) lowest = parseInt(d.quantity || 0) * qpt;
+                        }
+                        fetchStockDesc(itemId, lowest).then(function(desc){ try { row.update({ stockDesc: desc }); } catch(e){} });
+                    } catch(e) { /* ignore */ }
+                }
+
+                // populate stock for existing rows (defer slightly so Tabulator finishes rendering)
+                try {
+                    setTimeout(function() {
+                        try {
+                            var rows = table.getRows() || [];
+                            rows.forEach(function(r){ console.log('populateStockForRow init', r.getData()); populateStockForRow(r); });
+                        } catch(e) { console.warn('populateStock deferred failed', e); }
+                    }, 50);
+                } catch(e) { console.warn('populateStock schedule failed', e); }
+
+                // update stock when cells edited
+                try {
+                    table.on('cellEdited', function(cell){
+                        try {
+                            var row = cell.getRow();
+                            var f = cell.getField();
+                            var d = row.getData() || {};
+                            var itemId = parseInt(d.itemId || 0);
+                            var types = rowItemTypes[itemId] || [];
+                            var selectedType = types.find(function(x){ return String(x.itemTypeId) == String(d.itemTypeId); });
+                            var qpt = selectedType && selectedType.qtyPerType ? parseInt(selectedType.qtyPerType) : 0;
+
+                            if (f === 'quantity' || f === 'itemTypeId' || f === 'itemId') {
+                                // recompute lowest based on current UI quantity and selected type
+                                var newQty = parseInt(d.quantity || 0) || 0;
+                                var newLowest = 0;
+                                if (qpt > 0) newLowest = newQty * qpt;
+                                // update the row's qtyLowest so subsequent operations use updated value
+                                try { row.update({ qtyLowest: newLowest }); } catch(e) {}
+                                // populate stock description using newLowest
+                                fetchStockDesc(itemId, newLowest).then(function(desc){ try { row.update({ stockDesc: desc }); } catch(e){} });
+                            }
+                        } catch(e) { }
+                    });
+                } catch(e) {}
+
+                // ensure there's at least one row
+                if (!table.getData() || table.getData().length === 0) {
+                    table.addRow({ sl: 1, itemId: 0, itemName: '', itemTypeId: null, itemPrice: '', quantity: '' });
+                }
+                document.getElementById('addRowBtn').addEventListener('click', function() {
+                    var t = window._stockTransferTable;
+                    if (!t) return;
+
+                    // Validate that From and To godowns are selected before adding items
+                    var fromGodown = document.getElementById('fromGodown').value;
+                    var toGodown = document.getElementById('toGodown').value;
+                    if (!fromGodown || !toGodown) {
+                        alert('Please select both From and To godowns before adding items.');
+                        if (!fromGodown) document.getElementById('fromGodown').focus(); else document.getElementById('toGodown').focus();
+                        return;
+                    }
+
+                    // Prevent adding a new empty row if the last row is incomplete
+                    var data = t.getData() || [];
+                    if (data.length > 0) {
+                        var last = data[data.length - 1];
+                        if (!last || !last.itemId || parseInt(last.itemId) <= 0) {
+                            alert('Please select an item in the last row before adding a new one.');
+                            // focus last row's Item Name editor if possible
+                            try {
+                                var rows = t.getRows() || [];
+                                var lastRow = rows[rows.length - 1];
+                                if (lastRow) {
+                                    var c = lastRow.getCell('itemName');
+                                    if (c && typeof c.edit === 'function') c.edit();
+                                }
+                            } catch (e) { /* ignore */ }
+                            return;
+                        }
+                    }
+
+                    var next = (data.length || 0) + 1;
+                    // add at end (second param false or omitted) so new rows append
+                    t.addRow({ sl: next, itemId: 0, itemName: '', itemTypeId: null, itemPrice: '', quantity: '' }, false).then(function(row) {
+                        try { var cell = row.getCell('itemName'); if (cell && typeof cell.edit === 'function') cell.edit(); } catch (e) { }
+                    }).catch(function(err) { console.warn('addRow failed', err); });
+                });
+
+                // Prefill godown addresses if provided
+                try {
+                    if (_transferJson && _transferJson.fromGodown) {
+                        var fsel = document.getElementById('fromGodown');
+                        if (fsel) {
+                            fsel.value = _transferJson.fromGodown;
+                            var fo = fsel.querySelector('option[value="' + _transferJson.fromGodown + '"]');
+                            if (fo && fo.dataset && fo.dataset.address) { var fa = document.getElementById('fromAddress'); if (fa) fa.innerText = fo.dataset.address; }
+                        }
+                    }
+                    if (_transferJson && _transferJson.toGodown) {
+                        var tsel = document.getElementById('toGodown');
+                        if (tsel) {
+                            tsel.value = _transferJson.toGodown;
+                            var to = tsel.querySelector('option[value="' + _transferJson.toGodown + '"]');
+                            if (to && to.dataset && to.dataset.address) { var ta = document.getElementById('toAddress'); if (ta) ta.innerText = to.dataset.address; }
+                        }
+                    }
+                } catch (e) { /* ignore */ }
+
+                // Update displayed address when user changes selection
+                try {
+                    var fsel = document.getElementById('fromGodown');
+                    if (fsel) {
+                        fsel.addEventListener('change', function () {
+                            var opt = fsel.options[fsel.selectedIndex];
+                            var addr = (opt && opt.dataset) ? (opt.dataset.address || '') : '';
+                            var fa = document.getElementById('fromAddress'); if (fa) fa.innerText = addr || 'Address';
+                        });
+                    }
+                    var tsel2 = document.getElementById('toGodown');
+                    if (tsel2) {
+                        tsel2.addEventListener('change', function () {
+                            var opt = tsel2.options[tsel2.selectedIndex];
+                            var addr = (opt && opt.dataset) ? (opt.dataset.address || '') : '';
+                            var ta = document.getElementById('toAddress'); if (ta) ta.innerText = addr || 'Address';
+                        });
+                    }
+                } catch (e) { /* ignore */ }
+
+                // Save handler
+                document.getElementById('saveTransfer').addEventListener('click', function() {
+                    var fromGodown = parseInt(document.getElementById('fromGodown').value || 0);
+                    var toGodown = parseInt(document.getElementById('toGodown').value || 0);
+                    if (!fromGodown || !toGodown) { alert('Select both godowns'); return; }
+
+                    var rows = (window._stockTransferTable && window._stockTransferTable.getData()) || [];
+                    if (!rows || rows.length === 0) { alert('Add at least one item'); return; }
+
+                    // validate rows
+                    var seen = {};
+                    for (var i = 0; i < rows.length; i++) {
+                        var r = rows[i] || {};
+                        var idx = i + 1;
+                        if (!r.itemId || parseInt(r.itemId) <= 0) { alert('Row ' + idx + ': select an item before saving.'); return; }
+                        if (!r.itemTypeId || String(r.itemTypeId).trim() === '') { alert('Row ' + idx + ': select an item type.'); return; }
+                        if (r.quantity === undefined || r.quantity === null || parseFloat(r.quantity) <= 0) { alert('Row ' + idx + ': enter a valid quantity greater than zero.'); return; }
+                        if (seen[r.itemId]) { alert('Duplicate item found in rows: "' + (r.itemName || r.itemId) + '". Remove duplicates before saving.'); return; }
+                        seen[r.itemId] = true;
+                    }
+
+                    // remove any empty trailing row where itemId is not set (clean UI artifact)
+                    if (rows.length > 0) {
+                        var last = rows[rows.length - 1];
+                        if (!last || !last.itemId || parseInt(last.itemId) <= 0) {
+                            rows.pop();
+                        }
+                    }
+
+                    var items = rows.map(function(r, idx) { return { slNo: idx + 1, itemId: parseInt(r.itemId || 0), itemName: r.itemName, itemPrice: parseFloat(r.itemPrice || 0), quantity: parseFloat(r.quantity || 0), itemTypeId: r.itemTypeId ? parseInt(r.itemTypeId) : null }; }).filter(function(i) { return i.itemId && i.quantity > 0; });
+                    fetch('@Url.Action("StockTransfer", "Billing")', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fromGodown: fromGodown, toGodown: toGodown, items: items }) }).then(function(r){ return r.json(); }).then(function(resp) {
+                        // window.location.href = '@Url.Action("ViewStockTransfers", "Billing")';
+                    if (resp && resp.success) {
+                            alert('Saved successfully');
+                            try {
+                                // clear form controls
+                                var fsel = document.getElementById('fromGodown'); if (fsel) { fsel.value = ''; var fa = document.getElementById('fromAddress'); if (fa) fa.innerText = 'Address'; }
+                                var tsel = document.getElementById('toGodown'); if (tsel) { tsel.value = ''; var ta = document.getElementById('toAddress'); if (ta) ta.innerText = 'Address'; }
+                                // clear table rows and add an empty row
+                                try { var t = window._stockTransferTable; if (t) { t.clearData().then(function(){ t.addRow({ sl: 1, itemId: 0, itemName: '', itemTypeId: null, itemPrice: '', quantity: '' }); }); } } catch(e) {}
+                            } catch(e) {}
+                        }
+                        else alert('Error: ' + (resp && resp.message ? resp.message : 'Unknown'));
+                    }).catch(function(err) { console.error(err); alert('Error saving'); });
+                });
+            }).catch(function(err) { console.error('Tabulator init failed', err); });
+        });
+    </script>
+}

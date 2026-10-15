@@ -1,0 +1,209 @@
+@{
+    ViewData["Title"] = "Item Search";
+}
+
+<div class="container-fluid mt-0 mb-1">
+    <div class="dashboard-header">
+        <h3>Item Search</h3>
+    </div>
+
+    <div class="filters-section">
+        <div class="filter-row">
+            <div class="filter-group item-search-filter">
+                <label for="itemSearchInput">Item name or code</label>
+                <div style="position: relative;">
+                    <input id="itemSearchInput" class="form-control filter-input" type="text"
+                           placeholder="Type at least 2 characters" autocomplete="off"
+                           role="combobox" aria-autocomplete="list" aria-controls="itemSearchSuggestions" aria-expanded="false" />
+                    <div id="itemSearchSuggestions" role="listbox"
+                         style="display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 1000; max-height: 260px; overflow-y: auto; background: #fff; border: 1px solid #ced4da;"></div>
+                </div>
+                <input id="selectedItemId" type="hidden" />
+            </div>
+        </div>
+    </div>
+
+    <div id="itemSearchStatus" class="results-info" role="status" aria-live="polite">
+        Search by item name or code, then select an item to see its stock by godown.
+    </div>
+
+    <div class="tabulator-wrapper">
+        <div id="itemSearchGrid"></div>
+    </div>
+</div>
+
+<style>
+    .item-search-filter {
+        width: min(100%, 420px);
+    }
+
+    .item-search-option {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 0;
+        background: #fff;
+        color: #212529 !important;
+        text-align: left;
+        opacity: 1;
+        cursor: pointer;
+    }
+
+    .item-search-option:hover,
+    .item-search-option:focus {
+        background: #d9efff;
+        color: #111827 !important;
+        outline: none;
+    }
+</style>
+
+@section Scripts {
+    @Html.Partial("_TabulatorScripts")
+
+    <script>
+        window.TABULATOR_COLUMNS = [
+            {
+                title: 'Item Name + Code', field: 'itemName', minWidth: 200, widthGrow: 2,
+                formatter: function(cell) {
+                    var row = cell.getRow().getData();
+                    var wrapper = document.createElement('div');
+                    var name = document.createElement('div');
+                    var code = document.createElement('small');
+                    name.textContent = row.itemName || '';
+                    code.textContent = row.itemCode ? 'Code: ' + row.itemCode : '';
+                    wrapper.appendChild(name);
+                    wrapper.appendChild(code);
+                    return wrapper;
+                }
+            },
+            { title: 'Godown', field: 'godownName', minWidth: 130, widthGrow: 1 },
+            { title: 'Quantity', field: 'quantity', hozAlign: 'right', width: 130 },
+            {
+                title: 'Stock Position', field: 'stockPosition', minWidth: 180, widthGrow: 1,
+                formatter: function(cell) {
+                    var row = cell.getRow().getData();
+                    var span = document.createElement('span');
+                    span.textContent = 'Loading...';
+                    if (!row.itemId || !row.quantity) {
+                        span.textContent = '-';
+                        return span;
+                    }
+
+                    fetch('@Url.Action("GetItemStockDesc", "Billing")?itemId=' +
+                          encodeURIComponent(row.itemId) + '&quantity=' + encodeURIComponent(row.quantity))
+                        .then(function(response) { return response.json(); })
+                        .then(function(result) {
+                            span.textContent = result && result.success && result.data ? result.data : '-';
+                        })
+                        .catch(function(error) {
+                            console.error('Error loading stock position:', error);
+                            span.textContent = 'Error';
+                        });
+                    return span;
+                }
+            },
+            { title: 'Company', field: 'companyName', minWidth: 140, widthGrow: 1 },
+            { title: 'Category', field: 'categoryName', minWidth: 130, widthGrow: 1 },
+            { title: 'Subcategory', field: 'subcategoryName', minWidth: 140, widthGrow: 1 }
+        ];
+
+        window.TABULATOR_CONFIG = {
+            selector: '#itemSearchGrid',
+            ajaxUrl: null,
+            pageSize: 15,
+            initialData: [],
+            totalCount: 0
+        };
+    </script>
+
+    @Html.Partial("_TabulatorHelper")
+
+    <script>
+        (function() {
+            var itemInput = document.getElementById('itemSearchInput');
+            var selectedItemId = document.getElementById('selectedItemId');
+            var suggestions = document.getElementById('itemSearchSuggestions');
+            var status = document.getElementById('itemSearchStatus');
+            var suggestionsUrl = '@Url.Action("SuggestItems", "Masters")';
+            var resultsUrl = '@Url.Action("GetItemStockByGodown", "Stock")';
+            var timer;
+            var requestVersion = 0;
+
+            function hideSuggestions() {
+                suggestions.style.display = 'none';
+                suggestions.replaceChildren();
+                itemInput.setAttribute('aria-expanded', 'false');
+            }
+
+            function showItemStock(itemId) {
+                if (!window._itemSearchGrid || !itemId) return;
+                status.textContent = 'Loading stock by godown...';
+                window._itemSearchGrid.setData(resultsUrl, { itemId: itemId });
+            }
+
+            itemInput.addEventListener('input', function() {
+                var term = itemInput.value.trim();
+                selectedItemId.value = '';
+                requestVersion++;
+                clearTimeout(timer);
+                hideSuggestions();
+
+                if (window._itemSearchGrid) window._itemSearchGrid.clearData();
+                status.textContent = term.length < 2
+                    ? 'Type at least 2 characters to search.'
+                    : 'Searching items...';
+
+                if (term.length < 2) return;
+
+                var version = requestVersion;
+                timer = setTimeout(function() {
+                    fetch(suggestionsUrl + '?term=' + encodeURIComponent(term))
+                        .then(function(response) { return response.json(); })
+                        .then(function(options) {
+                            if (version !== requestVersion || itemInput.value.trim() !== term) return;
+
+                            suggestions.replaceChildren();
+                            (options || []).forEach(function(option) {
+                                var button = document.createElement('button');
+                                button.type = 'button';
+                                button.className = 'item-search-option';
+                                button.setAttribute('role', 'option');
+                                button.textContent = option.label;
+                                button.addEventListener('click', function() {
+                                    itemInput.value = option.label;
+                                    selectedItemId.value = option.id;
+                                    requestVersion++;
+                                    hideSuggestions();
+                                    showItemStock(option.id);
+                                });
+                                suggestions.appendChild(button);
+                            });
+
+                            suggestions.style.display = options && options.length ? 'block' : 'none';
+                            itemInput.setAttribute('aria-expanded', options && options.length ? 'true' : 'false');
+                            if (!options || !options.length) status.textContent = 'No matching items found.';
+                        })
+                        .catch(function(error) {
+                            console.error('Error loading item suggestions:', error);
+                            status.textContent = 'Unable to load item suggestions.';
+                            hideSuggestions();
+                        });
+                }, 250);
+            });
+
+            var hookTimer = setInterval(function() {
+                if (!window._tabulator_table) return;
+                window._itemSearchGrid = window._tabulator_table;
+                window._itemSearchGrid.options.ajaxResponse = function(url, params, response) {
+                    if (response && response.total !== undefined) {
+                        status.textContent = 'Found ' + response.total + ' godown(s) with available stock.';
+                    }
+                    return response && response.data ? response.data : [];
+                };
+                if (selectedItemId.value) showItemStock(selectedItemId.value);
+                clearInterval(hookTimer);
+            }, 50);
+            setTimeout(function() { clearInterval(hookTimer); }, 5000);
+        })();
+    </script>
+}

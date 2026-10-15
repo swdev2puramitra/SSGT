@@ -1,0 +1,94 @@
+@{
+    ViewData["Title"] = "Inventory";
+    var canUpdatePrices = ViewBag.CanUpdatePrices is bool value && value;
+}
+
+<div class="container-fluid inventory-page py-3"
+     data-inventory-url="@Url.Action("InventoryData", "Masters")"
+     data-items-url="@Url.Action("SuggestItems", "Masters")"
+     data-companies-url="@Url.Action("SuggestCompanies", "Masters")"
+     data-categories-url="@Url.Action("SuggestCategories", "Masters")"
+     data-subcategories-url="@Url.Action("SuggestSubcategories", "Masters")"
+     data-company-margins-url="@Url.Action("GetCompanyMargins", "Masters")"
+     data-update-url="@Url.Action("UpdateInventoryPrices", "Masters")"
+     data-can-update-prices="@canUpdatePrices.ToString().ToLowerInvariant()">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <div>
+            <h1 class="h3 mb-1">Inventory</h1>
+            <p class="text-muted mb-0">Search inventory by item, company, category, or subcategory.</p>
+        </div>
+        <div class="d-flex gap-2">
+            @if (canUpdatePrices)
+            {
+                <button id="saveInventoryPrices" class="btn btn-primary" type="button" disabled>Save price changes</button>
+            }
+            <button id="exportInventory" class="btn btn-outline-secondary" type="button">Export CSV</button>
+        </div>
+    </div>
+
+    @Html.AntiForgeryToken()
+
+    <form id="inventoryFilters" class="row g-3 align-items-end mb-3" autocomplete="off">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <label for="itemNameFilter" class="form-label">Item Name</label>
+            <input id="itemNameFilter" class="form-control" type="search" placeholder="Search item name or code" aria-describedby="itemNameHelp" />
+            <input id="itemIdFilter" type="hidden" />
+           @*  <div id="itemNameHelp" class="form-text">Type at least two characters, or enter a partial name/code.</div> *@
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <label for="companyFilter" class="form-label">Company Name</label>
+            <input id="companyFilter" class="form-control" type="search" placeholder="Select a company" />
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <label for="categoryFilter" class="form-label">Category</label>
+            <input id="categoryFilter" class="form-control" type="search" placeholder="Select a category" />
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <label for="subcategoryFilter" class="form-label">Subcategory</label>
+            <input id="subcategoryFilter" class="form-control" type="search" placeholder="Select a subcategory" />
+        </div>
+        <input id="companyIdFilter" type="hidden" />
+        <input id="categoryIdFilter" type="hidden" />
+        <input id="subcategoryIdFilter" type="hidden" />
+    </form>
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+        <div id="inventoryResults" class="small text-muted" role="status" aria-live="polite"></div>
+        <label class="form-check form-switch mb-0">
+            <input id="showWholeSalePrice" class="form-check-input" type="checkbox" role="switch" />
+            <span class="form-check-label">Show wholesale price</span>
+        </label>
+    </div>
+
+    <div id="inventoryGrid" class="inventory-grid" aria-label="Inventory results"></div>
+</div>
+
+<div class="modal fade" id="inventoryItemDetails" tabindex="-1" aria-labelledby="inventoryItemDetailsTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="inventoryItemDetailsTitle">Inventory Item Details</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Item Code</dt><dd class="col-sm-8" id="detailItemCode"></dd>
+                    <dt class="col-sm-4">Item Name</dt><dd class="col-sm-8" id="detailItemName"></dd>
+                    <dt class="col-sm-4">Stock Position</dt><dd class="col-sm-8" id="detailStockPosition"></dd>
+                    <dt class="col-sm-4">Company</dt><dd class="col-sm-8" id="detailCompanyName"></dd>
+                    <dt class="col-sm-4">Category</dt><dd class="col-sm-8" id="detailCategoryName"></dd>
+                    <dt class="col-sm-4">Subcategory</dt><dd class="col-sm-8" id="detailSubCategoryName"></dd>
+                    <dt class="col-sm-4">Conversion</dt><dd class="col-sm-8" id="detailConversionName"></dd>
+                    <dt class="col-sm-4">Contains</dt><dd class="col-sm-8" id="detailContains"></dd>
+                    <dt class="col-sm-4">Semi Wholesale Price</dt><dd class="col-sm-8" id="detailSemiWholeSalePrice"></dd>
+                    <dt class="col-sm-4">Retail Price</dt><dd class="col-sm-8" id="detailRetailPrice"></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("~/Views/Shared/_TabulatorScripts.cshtml")
+    <script src="~/js/Masters/inventory.js" asp-append-version="true"></script>
+}

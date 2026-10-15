@@ -1,0 +1,69 @@
+<div class="container-fluid mt-0 mb-1">
+    <div class="dashboard-header d-flex justify-content-between align-items-center">
+        <h3>View Stock List</h3>
+        <a class="btn btn-primary" href="@Url.Action("AddStock", "Masters")">Add Stock</a>
+    </div>
+
+    <form id="stockListFilters" class="filters-section stock-list-filters">
+        @Html.AntiForgeryToken()
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="stockFromFilter">Stock From</label>
+                <input id="stockFromFilter" class="form-control" placeholder="Search company" />
+            </div>
+            <div class="filter-group">
+                <label for="invoiceNoFilter">Invoice No</label>
+                <input id="invoiceNoFilter" class="form-control" placeholder="Search invoice" />
+            </div>
+            <div class="filter-group align-self-end">
+                <button id="clearStockFilters" type="button" class="btn btn-secondary">Clear</button>
+            </div>
+        </div>
+    </form>
+
+    <div id="resultsInfo" class="results-info"></div>
+    <div class="tabulator-wrapper">
+        <div id="stockListGrid"></div>
+    </div>
+</div>
+
+@section Scripts {
+    @Html.Partial("_TabulatorScripts")
+    <script>
+        window.TABULATOR_COLUMNS = [
+            { title: 'StockId', field: 'stockId', width: 90, hozAlign: 'right' },
+            { title: 'Stock From', field: 'stockFrom', minWidth: 140 },
+            { title: 'Godown', field: 'godown', minWidth: 140 },
+            { title: 'Received Date', field: 'receivedDate', minWidth: 150, formatter: function(cell) { return formatStockDate(cell.getValue()); } },
+            { title: 'Invoice No', field: 'invoiceNo', minWidth: 130 },
+            { title: 'Arrival Date', field: 'arrivalDate', minWidth: 120 },
+            { title: 'Comments', field: 'comments', minWidth: 180 },
+            {
+                title: 'Edit', width: 85, hozAlign: 'center', headerSort: false,
+                formatter: function() { return '<button type="button" class="btn btn-sm btn-outline-primary">Edit</button>'; },
+                cellClick: function(event, cell) {
+                    window.location.href = '@Url.Action("AddStock", "Masters")?stockId=' + encodeURIComponent(cell.getRow().getData().stockId);
+                }
+            },
+            {
+                title: 'Delete', width: 90, hozAlign: 'center', headerSort: false,
+                formatter: function() { return '<button type="button" class="btn btn-sm btn-outline-danger">Delete</button>'; },
+                cellClick: function(event, cell) { deleteStock(cell.getRow().getData().stockId); }
+            }
+        ];
+
+        window.TABULATOR_CONFIG = {
+            selector: '#stockListGrid',
+            ajaxUrl: '@Url.Action("GetStockList", "Masters")',
+            pageSize: 15,
+            initialData: [],
+            totalCount: 0
+        };
+        window.stockListConfig = {
+            listUrl: '@Url.Action("GetStockList", "Masters")',
+            deleteUrl: '@Url.Action("DeleteStock", "Masters")'
+        };
+    </script>
+    @Html.Partial("_TabulatorHelper")
+    <script src="~/js/Masters/stock-list.js" asp-append-version="true"></script>
+}

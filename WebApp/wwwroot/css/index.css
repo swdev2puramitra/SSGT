@@ -1,0 +1,78 @@
+/* ================================
+   INDEX.CSS - Master Stylesheet
+
+   This file imports all CSS layers in the correct order.
+   Include only this file in your _Layout.cshtml:
+
+   <link rel="stylesheet" href="~/css/index.css" />
+
+================================ */
+
+/* Layer 1: Themes - Color schemes and CSS variables */
+@import url('themes/theme-dark.css');
+@import url('theme/theme.css');
+
+/* Layer 1b: Theme Components - Navbar, Forms, Auth, Components */
+@import url('theme/navbar.css');
+@import url('theme/forms.css');
+@import url('theme/auth.css');
+@import url('theme/components.css');
+
+/* Layer 1c: Page-specific Theme Styles */
+@import url('theme/home.css');
+@import url('theme/reports.css');
+@import url('theme/layout.css');
+@import url('theme/under-construction.css');
+@import url('theme/stock.css');
+
+/* Layer 3: Components - Specific component styles */
+@import url('components/tables.css');
+@import url('components/buttons.css');
+@import url('components/controls.css');
+
+/* Layer 4: Utilities - Helper classes for spacing, text, display */
+@import url('utilities.css');
+
+/* Layer 5: Print - Print media queries and print-specific styles */
+@import url('print.css');
+
+
+/* ================================
+   GLOBAL OVERRIDES (if needed)
+================================ */
+
+* {
+    box-sizing: border-box;
+}
+
+/* Page-specific overrides for Stock Transfer Tabulator
+   Moved from inline <style> (per project CSS rules). */
+#itemsTable .tabulator-cell {
+    white-space: normal !important;
+    word-break: break-word !important;
+}
+#itemsTable .tabulator-row {
+    height: auto !important;
+}
+#itemsTable .tabulator-tableHolder {
+    /* allow Tabulator to control overflow; hide extra horizontal scrollbars when layout fits */
+    overflow-x: hidden !important;
+}
+
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    background: var(--page-bg);
+}
+
+/* Utilities added for Billing view to avoid inline styles in Razor views */
+.min-h-85 { min-height: 85px; }
+

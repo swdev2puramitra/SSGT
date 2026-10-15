@@ -1,0 +1,59 @@
+@{
+    ViewData["Title"] = "Under Construction";
+    var menuName = ViewBag.MenuName ?? "This Feature";
+}
+
+<link rel="stylesheet" href="~/css/theme/under-construction.css" />
+
+<div class="under-construction-container">
+    <div class="under-construction-content">
+        <!-- Construction Icon -->
+        <div class="construction-icon">
+            🔨
+        </div>
+
+        <!-- Main Heading -->
+        <h1 class="construction-title">Under Construction</h1>
+
+        <!-- Feature Name -->
+        <p class="construction-feature">
+            <strong>@menuName</strong> is currently under development.
+        </p>
+
+        <!-- Description -->
+        <p class="construction-description">
+            This feature is being actively developed and will be available soon. 
+            Thank you for your patience.
+        </p>
+
+        <!-- Status Box -->
+        <div class="construction-status">
+            <div class="status-item">
+                <span class="status-icon">🎯</span>
+                <span class="status-text">High Priority</span>
+            </div>
+            <div class="status-item">
+                <span class="status-icon">📅</span>
+                <span class="status-text">Coming Soon</span>
+            </div>
+            <div class="status-item">
+                <span class="status-icon">📧</span>
+                <span class="status-text">Be Notified</span>
+            </div>
+        </div>
+
+        <!-- Return Button -->
+        <div class="construction-actions">
+            <a href="@Url.Action("Index", "Home")" class="btn btn-primary btn-lg">
+                <span class="me-2">←</span>Back to Dashboard
+            </a>
+        </div>
+
+        <!-- Additional Info -->
+        <div class="construction-info">
+            <p class="text-muted small">
+                If you have any questions or suggestions, please contact the development team.
+            </p>
+        </div>
+    </div>
+</div>

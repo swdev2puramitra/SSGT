@@ -1,0 +1,391 @@
+@{
+    ViewData["Title"] = "Stock Inventory";
+    var godowns = ViewBag.Godowns as List<WebApp.Models.FwMasterGodown> ?? new List<WebApp.Models.FwMasterGodown>();
+}
+
+<div class="container-fluid mt-0 mb-1">
+    <!-- Header -->
+    <div class="dashboard-header d-flex justify-content-between align-items-center">
+        <h3>Stock Inventory</h3>
+        <div class="d-flex gap-2">
+            <a class="btn btn-primary" href="@Url.Action("AddStock", "Masters")">Add Stock</a>
+            <a class="btn btn-outline-secondary" href="@Url.Action("ViewStockList", "Masters")">View Stock List</a>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="godownFilter">Select Godown</label>
+                <select id="godownFilter" class="form-control filter-select">
+                    <option value="">-- Select Godown --</option>
+                    @foreach (var godown in godowns)
+                    {
+                        <option value="@godown.Id">@godown.GodownDescription</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="itemSearch">Item name or code</label>
+                <div class="stock-lookup">
+                    <input id="itemSearch" class="form-control filter-select stock-autocomplete" type="text"
+                           placeholder="Type at least 2 characters" autocomplete="off" disabled
+                           role="combobox" aria-autocomplete="list" aria-controls="itemSuggestions" aria-expanded="false" />
+                    <div id="itemSuggestions" class="stock-suggestions" role="listbox"></div>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label for="companyFilter">Company</label>
+                <div class="stock-lookup">
+                    <input id="companyFilter" class="form-control filter-select stock-autocomplete" type="text"
+                           placeholder="Type at least 2 characters" autocomplete="off" disabled
+                           role="combobox" aria-autocomplete="list" aria-controls="companySuggestions" aria-expanded="false" />
+                    <input id="companyIdFilter" type="hidden" />
+                    <div id="companySuggestions" class="stock-suggestions" role="listbox"></div>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label for="categoryFilter">Category</label>
+                <div class="stock-lookup">
+                    <input id="categoryFilter" class="form-control filter-select stock-autocomplete" type="text"
+                           placeholder="Type at least 2 characters" autocomplete="off" disabled
+                           role="combobox" aria-autocomplete="list" aria-controls="categorySuggestions" aria-expanded="false" />
+                    <input id="categoryIdFilter" type="hidden" />
+                    <div id="categorySuggestions" class="stock-suggestions" role="listbox"></div>
+                </div>
+            </div>
+            <div class="filter-group">
+                <label for="subcategoryFilter">Subcategory</label>
+                <div class="stock-lookup">
+                    <input id="subcategoryFilter" class="form-control filter-select stock-autocomplete" type="text"
+                           placeholder="Type at least 2 characters" autocomplete="off" disabled
+                           role="combobox" aria-autocomplete="list" aria-controls="subcategorySuggestions" aria-expanded="false" />
+                    <input id="subcategoryIdFilter" type="hidden" />
+                    <div id="subcategorySuggestions" class="stock-suggestions" role="listbox"></div>
+                </div>
+            </div>
+            <div class="filter-group">
+                <button id="clearButton" class="btn btn-secondary">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Info -->
+    <div id="resultsInfo" class="results-info">
+        <strong>No godown selected</strong>
+    </div>
+
+    <!-- Tabulator Grid Container -->
+    <div class="tabulator-wrapper">
+        <div id="stockGrid"></div>
+    </div>
+</div>
+
+@section Scripts {
+    @Html.Partial("_TabulatorScripts")
+
+    <script>
+        // Define columns for stock inventory grid
+        window.TABULATOR_COLUMNS = [
+            { title: 'Sl No', field: 'slno', formatter: 'rownum', width: 80, hozAlign: 'center' },
+            { title: 'Item Code', field: 'itemCode', width: 140 },
+            { title: 'Item Name', field: 'itemName', width: 250 },
+            { title: 'Company Name', field: 'companyName', width: 140 },
+            {
+                title: 'Quantity', field: 'quantity', hozAlign: 'right', width: 80, visible: false, formatter: function(cell) {
+                    const v = cell.getValue();
+                    return v ? parseInt(v).toString() : '0';
+                }
+            },
+            {
+                title: 'Stock Position', field: 'StockDescreption', width: 250, formatter: function(cell) {
+                    var row = cell.getRow().getData();
+                    // Create a span element for async loading
+                    var span = document.createElement('span');
+                    span.className = 'qty-desc-cell';
+                    span.textContent = 'Loading...';
+
+                    // Fetch qty description asynchronously if itemId and quantity are available
+                    if (row.itemId && row.quantity) {
+                        fetch('@Url.Action("GetItemStockDesc", "Stock")?itemId=' + row.itemId + '&quantity=' + row.quantity)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success && data.data) {
+                                    span.textContent = data.data + "("+ row.quantity+")";
+                                } else {
+                                    span.textContent = '-';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching qty description:', error);
+                                span.textContent = 'Error';
+                            });
+                    } else {
+                        span.textContent = '-';
+                    }
+
+                    return span;
+                }
+            },
+            { title: 'Company Name', field: 'companyName', width: 130 },
+            { title: 'Category', field: 'categoryName', width: 120 },
+            { title: 'Sub Category', field: 'subcategoryName', width: 150 },
+        ];
+
+        // Store grid instance for later manipulation
+        window._stockGrid = null;
+
+        function hideItemSuggestions() {
+            var suggestions = document.getElementById('itemSuggestions');
+            suggestions.style.display = 'none';
+            suggestions.replaceChildren();
+            document.getElementById('itemSearch').setAttribute('aria-expanded', 'false');
+        }
+
+        function reloadStockGrid() {
+            var godownId = document.getElementById('godownFilter').value;
+            if (!godownId || !window._stockGrid) return;
+
+            var term = document.getElementById('itemSearch').value.trim();
+            window._stockGrid.setData('@Url.Action("GetStockByGodown", "Stock")', {
+                godownId: parseInt(godownId),
+                search: term.length >= 2 ? term : '',
+                companyId: document.getElementById('companyIdFilter').value,
+                categoryId: document.getElementById('categoryIdFilter').value,
+                subcategoryId: document.getElementById('subcategoryIdFilter').value
+            });
+        }
+
+        function hideSuggestions(input, suggestions) {
+            suggestions.style.display = 'none';
+            suggestions.replaceChildren();
+            input.setAttribute('aria-expanded', 'false');
+        }
+
+        function setupLookupAutocomplete(inputId, hiddenId, suggestionsId, url, options) {
+            var input = document.getElementById(inputId);
+            var hidden = document.getElementById(hiddenId);
+            var suggestions = document.getElementById(suggestionsId);
+            var timer;
+            var requestVersion = 0;
+            options = options || {};
+
+            input.addEventListener('input', function() {
+                var term = input.value.trim();
+                var godownId = document.getElementById('godownFilter').value;
+                hidden.value = '';
+                requestVersion++;
+                clearTimeout(timer);
+                hideSuggestions(input, suggestions);
+                if (options.onInput) options.onInput();
+                reloadStockGrid();
+
+                if (term.length < 2 || !godownId) return;
+
+                var version = requestVersion;
+                timer = setTimeout(function() {
+                    var parameters = new URLSearchParams({ term: term });
+                    if (options.getExtraParameters) {
+                        var extraParameters = options.getExtraParameters();
+                        Object.keys(extraParameters).forEach(function(key) {
+                            parameters.set(key, extraParameters[key]);
+                        });
+                    }
+
+                    fetch(url + '?' + parameters.toString())
+                        .then(function(response) { return response.json(); })
+                        .then(function(results) {
+                            if (version !== requestVersion || input.value.trim() !== term ||
+                                document.getElementById('godownFilter').value !== godownId) return;
+
+                            suggestions.replaceChildren();
+                            (results || []).forEach(function(option) {
+                                var button = document.createElement('button');
+                                button.type = 'button';
+                                button.className = 'dropdown-item';
+                                button.setAttribute('role', 'option');
+                                button.textContent = option.label;
+                                button.addEventListener('click', function() {
+                                    input.value = option.value;
+                                    hidden.value = option.id;
+                                    requestVersion++;
+                                    hideSuggestions(input, suggestions);
+                                    if (options.onSelect) options.onSelect(option);
+                                    reloadStockGrid();
+                                });
+                                suggestions.appendChild(button);
+                            });
+
+                            suggestions.style.display = results && results.length ? 'block' : 'none';
+                            input.setAttribute('aria-expanded', results && results.length ? 'true' : 'false');
+                        })
+                        .catch(function(error) {
+                            console.error('Error loading filter suggestions:', error);
+                            hideSuggestions(input, suggestions);
+                        });
+                }, 250);
+            });
+        }
+
+        function clearSubcategoryFilter() {
+            document.getElementById('subcategoryFilter').value = '';
+            document.getElementById('subcategoryIdFilter').value = '';
+            hideSuggestions(
+                document.getElementById('subcategoryFilter'),
+                document.getElementById('subcategorySuggestions'));
+        }
+
+        setupLookupAutocomplete('companyFilter', 'companyIdFilter', 'companySuggestions',
+            '@Url.Action("SuggestCompanies", "Masters")');
+        setupLookupAutocomplete('categoryFilter', 'categoryIdFilter', 'categorySuggestions',
+            '@Url.Action("SuggestCategories", "Masters")', {
+                onInput: clearSubcategoryFilter,
+                onSelect: clearSubcategoryFilter
+            });
+        setupLookupAutocomplete('subcategoryFilter', 'subcategoryIdFilter', 'subcategorySuggestions',
+            '@Url.Action("SuggestSubcategories", "Masters")', {
+                getExtraParameters: function() {
+                    var categoryId = document.getElementById('categoryIdFilter').value;
+                    return categoryId ? { categoryId: categoryId } : {};
+                }
+            });
+
+        function resetLookupFilter(inputId, hiddenId, suggestionsId) {
+            var input = document.getElementById(inputId);
+            input.value = '';
+            input.disabled = !document.getElementById('godownFilter').value;
+            document.getElementById(hiddenId).value = '';
+            hideSuggestions(input, document.getElementById(suggestionsId));
+        }
+
+        // Godown filter change handler
+        document.getElementById('godownFilter').addEventListener('change', function() {
+            var godownId = this.value;
+            var itemSearch = document.getElementById('itemSearch');
+            itemSearch.value = '';
+            itemSearch.disabled = !godownId;
+            hideItemSuggestions();
+            resetLookupFilter('companyFilter', 'companyIdFilter', 'companySuggestions');
+            resetLookupFilter('categoryFilter', 'categoryIdFilter', 'categorySuggestions');
+            resetLookupFilter('subcategoryFilter', 'subcategoryIdFilter', 'subcategorySuggestions');
+
+            if (!godownId) {
+                document.getElementById('resultsInfo').innerHTML = '<strong>No godown selected</strong>';
+                if (window._stockGrid) {
+                    window._stockGrid.clearData();
+                }
+                return;
+            }
+
+            // Reload grid data for selected godown
+            reloadStockGrid();
+        });
+
+        // Load godown-specific autocomplete results and filter after at least 2 characters.
+        var itemSearchTimer;
+        document.getElementById('itemSearch').addEventListener('input', function() {
+            var input = this;
+            var term = input.value.trim();
+            clearTimeout(itemSearchTimer);
+
+            if (term.length < 2 || !document.getElementById('godownFilter').value) {
+                hideItemSuggestions();
+                reloadStockGrid();
+                return;
+            }
+
+            itemSearchTimer = setTimeout(function() {
+                var godownId = document.getElementById('godownFilter').value;
+                var url = '@Url.Action("GetStockItemSuggestions", "Stock")' +
+                    '?godownId=' + encodeURIComponent(godownId) + '&term=' + encodeURIComponent(term);
+
+                fetch(url)
+                    .then(function(response) { return response.json(); })
+                    .then(function(result) {
+                        if (input.value.trim() !== term || document.getElementById('godownFilter').value !== godownId) return;
+
+                        var suggestions = document.getElementById('itemSuggestions');
+                        suggestions.replaceChildren();
+                        (result.data || []).forEach(function(item) {
+                            var option = document.createElement('button');
+                            option.type = 'button';
+                            option.setAttribute('role', 'option');
+                            option.className = 'stock-autocomplete-option';
+                            option.textContent = item.itemName + (item.itemCode ? ' (' + item.itemCode + ')' : '');
+                            option.addEventListener('click', function() {
+                                input.value = item.itemCode || item.itemName;
+                                hideItemSuggestions();
+                                reloadStockGrid();
+                            });
+                            suggestions.appendChild(option);
+                        });
+
+                        suggestions.style.display = result.data && result.data.length ? 'block' : 'none';
+                        input.setAttribute('aria-expanded', result.data && result.data.length ? 'true' : 'false');
+                    })
+                    .catch(function(error) {
+                        console.error('Error loading stock item suggestions:', error);
+                        hideItemSuggestions();
+                    });
+
+                reloadStockGrid();
+            }, 250);
+        });
+
+        // Clear button handler
+        document.getElementById('clearButton').addEventListener('click', function() {
+            document.getElementById('godownFilter').value = '';
+            var itemSearch = document.getElementById('itemSearch');
+            itemSearch.value = '';
+            itemSearch.disabled = true;
+            hideItemSuggestions();
+            resetLookupFilter('companyFilter', 'companyIdFilter', 'companySuggestions');
+            resetLookupFilter('categoryFilter', 'categoryIdFilter', 'categorySuggestions');
+            resetLookupFilter('subcategoryFilter', 'subcategoryIdFilter', 'subcategorySuggestions');
+            document.getElementById('resultsInfo').innerHTML = '<strong>No godown selected</strong>';
+            if (window._stockGrid) {
+                window._stockGrid.clearData();
+            }
+        });
+
+        // Configure Tabulator
+        window.TABULATOR_CONFIG = {
+            selector: '#stockGrid',
+            ajaxUrl: '@Url.Action("GetStockByGodown", "Stock")',
+            pageSize: 15,
+            initialData: [],
+            totalCount: 0
+        };
+    </script>
+
+    @Html.Partial("_TabulatorHelper")
+
+    <script>
+        // Override TabulatorHelper to store grid instance and customize for stock view
+        (function() {
+            // Wait for grid to be created and expose instance
+            var checkGrid = setInterval(function() {
+                if (window._tabulator_table) {
+                    window._stockGrid = window._tabulator_table;
+                    clearInterval(checkGrid);
+
+                    // Override AJAX response to update results info
+                    var originalResponse = window._tabulator_table.options.ajaxResponse;
+                    window._tabulator_table.options.ajaxResponse = function(url, params, response) {
+                        if (response && response.total !== undefined) {
+                            var el = document.getElementById('resultsInfo');
+                            if (el) {
+                                el.innerHTML = 'Found <strong>' + response.total + '</strong> item(s) in selected godown';
+                            }
+                        }
+                        return (response && response.data) ? response.data : [];
+                    };
+                }
+            }, 100);
+
+            // Clean up interval after 5 seconds
+            setTimeout(function() { clearInterval(checkGrid); }, 5000);
+        })();
+    </script>
+}

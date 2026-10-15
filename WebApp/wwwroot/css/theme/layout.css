@@ -1,0 +1,220 @@
+/* ============================================================
+   LAYOUT STYLES - Navbar, Footer, Main Content
+   ============================================================ */
+
+/* ---- PAGE STRUCTURE ---- */
+
+html, body {
+    height: 100%;
+    overflow-x: hidden;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1 1 auto;
+}
+
+/* ============================================================
+   NAVBAR
+   ============================================================ */
+
+header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid var(--color-border-light);
+    background-color: var(--color-surface-secondary);
+}
+
+.navbar {
+    background-color: var(--color-surface-secondary) !important;
+    border-bottom: 1px solid var(--color-border-light) !important;
+    padding: 0;
+}
+
+.navbar-brand {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary-blue) !important;
+    text-shadow: var(--glow-blue);
+    transition: color var(--transition-base), text-shadow var(--transition-base);
+    padding: var(--space-md) var(--space-lg);
+}
+
+.navbar-brand:hover {
+    color: var(--color-primary-yellow) !important;
+    text-shadow: var(--glow-yellow);
+}
+
+.navbar-toggler {
+    border: 1px solid var(--color-border-medium);
+    color: var(--color-text-secondary);
+    padding: var(--space-sm) var(--space-md);
+}
+
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 0.25rem rgba(0, 176, 255, 0.25);
+    border-color: var(--color-primary-blue);
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%23b0b0b0' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Navbar Nav */
+
+.navbar-nav {
+    gap: var(--space-md);
+}
+
+.nav-link {
+    color: var(--color-text-secondary) !important;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    /*padding: var(--space-md) var(--space-lg) !important;*/
+    transition: color var(--transition-base), background-color var(--transition-base), box-shadow var(--transition-base);
+    border-radius: var(--radius-lg);
+    position: relative;
+}
+
+.nav-link:hover {
+    color: var(--color-primary-blue) !important;
+    background-color: rgba(0, 176, 255, 0.1);
+    box-shadow: inset 0 0 10px rgba(0, 176, 255, 0.2);
+}
+
+.nav-link.active {
+    color: var(--color-primary-blue) !important;
+    background-color: rgba(0, 176, 255, 0.2);
+    border-bottom: 2px solid var(--color-primary-blue);
+    box-shadow: var(--glow-blue);
+}
+
+/* ============================================================
+   MAIN CONTENT AREA
+   ============================================================ */
+
+.container,
+.container-fluid {
+    background-color: var(--color-bg-dark);
+    margin: 0;
+    /* Override Bootstrap defaults to prevent spacing issues */
+}
+
+/*main {
+    padding: var(--space-lg) 0 0 0;*/
+    /* Top padding: separates content from navbar */
+    /* No bottom padding: allows footer to sit naturally at bottom */
+/*}*/
+
+main {
+    /* Reduce top padding to 0.5rem to avoid excessive gap below the sticky header */
+    padding-top: 0.5rem;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+
+footer {
+    background-color: var(--color-surface-secondary);
+    border-top: 1px solid var(--color-border-light);
+    padding: var(--space-lg) 0;
+    margin-top: auto;
+    margin-bottom: 0;
+    margin-left: 0;
+    margin-right: 0;
+    /* margin-top: auto pushes footer to bottom via flexbox */
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    flex-shrink: 0;
+}
+
+footer a {
+    color: var(--color-primary-blue);
+    text-decoration: none;
+    transition: color var(--transition-base), text-shadow var(--transition-base);
+}
+
+footer a:hover {
+    color: var(--color-primary-yellow);
+    text-shadow: var(--glow-yellow);
+}
+
+footer .container {
+    padding: var(--space-lg) var(--space-lg);
+}
+
+/* ============================================================
+   RESPONSIVE - MOBILE
+   ============================================================ */
+
+@media (max-width: 575.98px) {
+    .navbar {
+        padding: 0.5rem var(--space-md);
+    }
+
+    .navbar-brand {
+        font-size: var(--font-size-lg);
+        padding: 0;
+    }
+
+    .nav-link {
+        padding: var(--space-md) var(--space-md) !important;
+        font-size: var(--font-size-xs);
+    }
+
+    main {
+        padding-top: var(--space-md, 1rem);
+        /* Top padding only - no bottom padding */
+    }
+
+    footer {
+        padding: var(--space-md) 0;
+        font-size: var(--font-size-xs);
+    }
+}
+
+/* ============================================================
+   RESPONSIVE - TABLET
+   ============================================================ */
+
+@media (min-width: 576px) and (max-width: 767.98px) {
+    .navbar-brand {
+        font-size: var(--font-size-lg);
+    }
+
+    .nav-link {
+        font-size: var(--font-size-xs);
+        padding: var(--space-md) var(--space-md) !important;
+    }
+}
+
+/* ============================================================
+   APPLICATION WIDE PAGE HEADER
+   Use this class for consistent section headers across the app
+   ============================================================ */
+.dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--color-border-light);
+    /*margin-bottom: var(--space-lg);*/
+    background: transparent;
+}
+.dashboard-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+.dashboard-header .subtitle {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}

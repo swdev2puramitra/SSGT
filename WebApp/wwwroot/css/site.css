@@ -1,0 +1,693 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+
+/* ================================
+   PAGE
+================================ */
+
+.landing-page {
+    min-height: 100vh;
+    background: #0d0b09;
+    color: #fff;
+}
+
+
+/* ================================
+   NAVBAR
+================================ */
+
+.custom-navbar {
+    height: 82px;
+    background: #302c32;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    position: relative;
+    z-index: 10;
+}
+
+    .custom-navbar .navbar-nav {
+        height: 100%;
+    }
+
+    .custom-navbar .nav-link {
+        color: #aaa;
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        padding: 8px 16px;
+    }
+
+        .custom-navbar .nav-link:hover {
+            color: #fff;
+        }
+
+
+        /* HOME pill */
+
+        .custom-navbar .nav-link.active {
+            color: #fff;
+            border: 1px solid #aaa;
+            border-radius: 20px;
+            padding: 5px 15px;
+        }
+
+
+/* ================================
+   SEARCH
+================================ */
+
+.search-box {
+    width: 140px;
+    height: 24px;
+    border: 1px solid #aaa;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    flex-shrink: 0;
+}
+
+    .search-box input {
+        width: 100%;
+        border: none;
+        outline: none;
+        background: transparent;
+        color: #fff;
+        font-size: 11px;
+    }
+
+        .search-box input::placeholder {
+            color: #aaa;
+        }
+
+.search-icon {
+    color: #bbb;
+    font-size: 17px;
+    margin-right: 4px;
+}
+
+
+/* ================================
+   HERO
+================================ */
+
+.hero-section {
+    min-height: calc(100vh - 82px);
+    position: relative;
+    background: linear-gradient( 90deg, rgba(10, 9, 7, 0.98) 0%, rgba(10, 9, 7, 0.90) 40%, rgba(10, 9, 7, 0.30) 100% ), url('/images/fireworks.png') center center / cover no-repeat;
+    overflow: hidden;
+}
+
+
+/* Additional dark overlay */
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient( circle at 70% 50%, rgba(150, 90, 20, 0.08), transparent 45% );
+}
+
+
+/* ================================
+   HERO CONTENT
+================================ */
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    padding-left: 8%;
+    padding-top: 10px;
+}
+
+    .hero-content h1 {
+        margin: 0 0 28px;
+        font-size: clamp(42px, 5vw, 68px);
+        line-height: 0.95;
+        font-weight: 700;
+    }
+
+        .hero-content h1 span {
+            display: block;
+            color: #fff;
+        }
+
+        .hero-content h1 strong {
+            display: block;
+            color: #efa52e;
+            font-weight: 700;
+        }
+
+
+    /* Description */
+
+    .hero-content p {
+        max-width: 280px;
+        color: #bbb;
+        font-size: 11px;
+        line-height: 1.5;
+        margin-bottom: 25px;
+    }
+
+
+/* ================================
+   PACKING DASHBOARD
+================================ */
+
+.packing-dashboard {
+    background: #0d0b09;
+    color: #fff;
+    min-height: 100vh;
+    padding: 15px;
+    padding-top: 5px;
+    margin-top: -5px;
+}
+
+.dashboard-header {
+    margin-bottom: 12px;
+    margin-top: 0;
+    border-bottom: 2px solid #1a1a1a;
+    padding-bottom: 8px;
+}
+
+    .dashboard-header h3 {
+        font-size: 24px;
+        font-weight: 600;
+        margin: 0;
+        padding: 0;
+        color: #fff;
+        line-height: 1.1;
+    }
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 6px;
+}
+
+.btn-print {
+    background: #00d4ff;
+    color: #0d0b09;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+    .btn-print:hover {
+        background: #00a8cc;
+        text-decoration: none;
+    }
+
+    .btn-print i {
+        font-size: 13px;
+    }
+
+.bill-info {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    margin: 0;
+    padding: 2px 0 0 0;
+}
+
+    .bill-no,
+    .bill-name {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+        margin: 0;
+        padding: 0;
+    }
+
+        .bill-no .label,
+        .bill-name .label {
+            color: #888;
+            font-size: 12px;
+            font-weight: 500;
+            margin: 0;
+            padding: 0;
+        }
+
+        .bill-no .value,
+        .bill-name .value {
+            color: #00d4ff;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0;
+            padding: 0;
+        }
+
+.godowns-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin: 12px 0 0 0;
+}
+
+.godown-section {
+    background: #1a1810;
+    border: 1px solid #2a2820;
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.godown-header {
+    background: #2a2820;
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #00d4ff;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+    .godown-header h4 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #00d4ff;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    .godown-header .case-count {
+        color: #ffd700;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.2;
+        white-space: nowrap;
+        margin-left: auto;
+        padding-left: 10px;
+    }
+
+.packing-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+}
+
+    .packing-table thead {
+        background: #2a2820;
+    }
+
+        .packing-table thead th {
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #999;
+            border-bottom: 1px solid #1a1810;
+            line-height: 1.2;
+            vertical-align: middle;
+            height: auto;
+        }
+
+    .packing-table tbody tr {
+        border-bottom: 1px solid #2a2820;
+        transition: background-color 0.2s ease;
+        height: auto;
+    }
+
+        .packing-table tbody tr:hover {
+            background-color: #2a2820;
+        }
+
+        .packing-table tbody tr.packed-item {
+            opacity: 0.55;
+        }
+
+    .packing-table td {
+        padding: 6px 8px;
+        font-size: 12px;
+        line-height: 1.3;
+        vertical-align: middle;
+    }
+
+        .packing-table td.sl-no {
+            color: #888;
+            width: 35px;
+            text-align: center;
+            padding-left: 6px;
+            padding-right: 6px;
+        }
+
+        .packing-table td.item-name {
+            color: #e0e0e0;
+            flex: 1;
+            word-break: break-word;
+        }
+
+        .packing-table td.stock-info {
+            color: #00d4ff;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .packing-table td.checkbox-cell {
+            text-align: center;
+            width: 50px;
+            padding: 4px 6px;
+        }
+
+            .packing-table td.checkbox-cell input[type="checkbox"] {
+                width: 16px;
+                height: 16px;
+                cursor: pointer;
+                accent-color: #00d4ff;
+                margin: 0;
+            }
+
+            .packing-table td.checkbox-cell .checkmark-icon {
+                display: none;
+                margin-left: 4px;
+                color: #00d4ff;
+                font-size: 12px;
+                vertical-align: middle;
+            }
+
+            .packing-table td.checkbox-cell input[type="checkbox"]:checked + .checkmark-icon {
+                display: inline;
+            }
+
+.packing-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 15px;
+    padding-top: 12px;
+    border-top: 1px solid #2a2820;
+}
+
+    .packing-actions .btn {
+        padding: 10px 25px;
+        font-size: 14px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+        .packing-actions .btn-primary {
+            background: #00d4ff;
+            color: #0d0b09;
+        }
+
+            .packing-actions .btn-primary:hover {
+                background: #00a8cc;
+                text-decoration: none;
+            }
+
+        .packing-actions .btn-secondary {
+            background: #2a2820;
+            color: #fff;
+            border: 1px solid #444;
+            text-decoration: none;
+        }
+
+                .packing-actions .btn-secondary:hover {
+                            background: #3a3a30;
+                            color: #fff;
+                            text-decoration: none;
+                        }
+
+
+            /* ================================
+               UTILITY CLASSES FOR PACKING DASHBOARD
+            ================================ */
+
+            /* Bootstrap-compatible margin utilities */
+            .m-0 {
+                margin: 0 !important;
+            }
+
+            .mb-2 {
+                margin-bottom: 0.5rem !important;
+            }
+
+            .mt-3 {
+                margin-top: 1rem !important;
+            }
+
+            .me-2 {
+                margin-right: 0.5rem !important;
+            }
+
+
+            /* ================================
+               BUTTON
+            ================================ */
+
+.learn-more-btn {
+    border: 1px solid #aaa;
+    border-radius: 20px;
+    color: #fff;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    padding: 7px 18px;
+    background: transparent;
+    transition: all 0.3s ease;
+}
+
+    .learn-more-btn:hover {
+        background: #efa52e;
+        border-color: #efa52e;
+        color: #111;
+    }
+
+
+/* ================================
+   MOBILE
+================================ */
+
+@media (max-width: 991px) {
+
+    .custom-navbar {
+        height: auto;
+        min-height: 70px;
+    }
+
+    .search-box {
+        margin-right: auto;
+    }
+
+    .custom-toggler {
+        border: 1px solid #777;
+    }
+
+        .custom-toggler .navbar-toggler-icon {
+            filter: invert(1);
+        }
+
+    .custom-navbar .navbar-nav {
+        padding: 20px 0;
+        gap: 8px;
+    }
+
+    .hero-section {
+        min-height: calc(100vh - 70px);
+        background-position: 65% center;
+    }
+
+    .hero-content {
+        padding-left: 8%;
+        padding-right: 8%;
+    }
+
+    .godowns-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .packing-dashboard {
+        padding: 12px;
+        padding-top: 8px;
+    }
+
+    .dashboard-header {
+        margin-bottom: 10px;
+        padding-bottom: 6px;
+    }
+
+    .dashboard-header h3 {
+        font-size: 20px;
+    }
+
+    .bill-info {
+        flex-direction: column;
+        gap: 6px;
+        align-items: flex-start;
+    }
+
+    .godown-header {
+        padding: 7px 10px;
+    }
+
+    .godown-header h4 {
+        font-size: 13px;
+    }
+
+    .godown-header .case-count {
+        font-size: 11px;
+    }
+
+    .packing-table thead th {
+        padding: 5px 6px;
+        font-size: 11px;
+    }
+
+    .packing-table td {
+        padding: 5px 6px;
+        font-size: 11px;
+    }
+}
+
+
+/* ================================
+   PRINT STYLES
+================================ */
+
+@media print {
+    /* Hide navbar and print button */
+    .custom-navbar,
+    .btn-print,
+    .packing-actions {
+        display: none !important;
+    }
+
+    /* Optimize print layout */
+    .packing-dashboard {
+        background: #fff;
+        color: #000;
+        padding: 0;
+        min-height: auto;
+        margin: 0;
+    }
+
+    .dashboard-header {
+        margin-top: 0;
+        padding-top: 0;
+        border-bottom: 2px solid #333;
+    }
+
+        .dashboard-header h3 {
+            color: #000;
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+    .bill-info {
+        color: #333;
+    }
+
+        .bill-info .label {
+            color: #555;
+        }
+
+        .bill-info .value {
+            color: #000;
+        }
+
+    .godowns-grid {
+        gap: 8px;
+    }
+
+    .godown-section {
+        background: #fff;
+        border: 1px solid #ccc;
+        page-break-inside: avoid;
+    }
+
+    .godown-header {
+        background: #f5f5f5;
+        border-bottom: 1px solid #999;
+    }
+
+        .godown-header h4 {
+            color: #000;
+        }
+
+        .godown-header .case-count {
+            color: #666;
+        }
+
+    .packing-table {
+        font-size: 11px;
+    }
+
+        .packing-table thead {
+            background: #f9f9f9;
+        }
+
+            .packing-table thead th {
+                border-bottom: 2px solid #333;
+                color: #000;
+                font-weight: 700;
+            }
+
+        .packing-table tbody tr {
+            page-break-inside: avoid;
+        }
+
+            .packing-table tbody td {
+                border-bottom: 1px solid #ddd;
+                color: #000;
+            }
+
+        .packing-table td.stock-info {
+            color: #333;
+        }
+
+        .packing-table td.checkbox-cell {
+            width: 40px;
+        }
+
+            .packing-table td.checkbox-cell input,
+            .packing-table td.checkbox-cell .checkmark-icon {
+                display: block;
+                width: 16px;
+                height: 16px;
+            }
+
+    .alert {
+        border: 1px solid #ccc;
+        background: #f9f9f9;
+        color: #333;
+    }
+}
+
+
+@media (max-width: 576px) {
+
+    .search-box {
+        width: 120px;
+    }
+
+    .hero-content h1 {
+        font-size: 45px;
+    }
+
+    .hero-content p {
+        max-width: 250px;
+    }
+}

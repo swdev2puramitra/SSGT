@@ -1,0 +1,39 @@
+﻿# Visual Studio temporary files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# NuGet packages
+packages/
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+secrets.json
+appsettings.Local.json
+
+# Publish output
+publish/
+artifacts/
+
+# Local development configuration
+WebApp/appsettings.json
+
+# Configuration containing local credentials
+WebApp/appsettings.json
+WebApp/appsettings.Development.json

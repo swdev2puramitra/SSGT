@@ -1,0 +1,109 @@
+﻿@{
+    ViewData["Title"] = "View Stock Transfers";
+}
+
+@{ var _startOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1); var _endOfMonth = DateTime.Now; }
+
+<div class="container-fluid mt-0 mb-1">
+    <div class="dashboard-header">
+        <h3>View Stock Transfer</h3>
+    </div>
+     <div class="row mb-2">
+        <div class="col-md-3">
+            <label>From Godown</label>
+            <select id="filterFromGodown" class="form-control">
+                <option value="">-- All --</option>
+                @foreach (var g in ViewBag.Godowns as List<WebApp.Models.FwMasterGodown> ?? new List<WebApp.Models.FwMasterGodown>())
+                {
+                    <option value="@g.Id">@g.GodownDescription</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label>To Godown</label>
+            <select id="filterToGodown" class="form-control">
+                <option value="">-- All --</option>
+                @foreach (var g in ViewBag.Godowns as List<WebApp.Models.FwMasterGodown> ?? new List<WebApp.Models.FwMasterGodown>())
+                {
+                    <option value="@g.Id">@g.GodownDescription</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label>From Date</label>
+            <input id="filterStart" type="date" class="form-control" value="@_startOfMonth.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-md-3">
+            <label>To Date</label>
+            <input id="filterEnd" type="date" class="form-control" value="@_endOfMonth.ToString("yyyy-MM-dd")" />
+        </div>
+    </div>
+    <div class="jqgrid-wrapper">
+        <table id="stockTransferGrid"></table>
+        <div id="stockTransferGrid_pager"></div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("~/Views/Shared/_TabulatorScripts.cshtml")
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var container = document.querySelector('#stockTransferGrid');
+            // Initialize Tabulator remote pagination
+            var tablePromise = TabulatorHelper.createTabulator(container, {
+                ajaxURL: '/Billing/GetStockTransfers',
+                ajaxParams: {},
+                ajaxConfig: 'GET',
+                layout: 'fitColumns',
+                pagination: 'remote',
+                paginationSize: 10,
+                paginationSizeSelector: [10,25,50],
+                paginationDataSent: { 'page': 'page', 'size': 'size' },
+                paginationDataReceived: { data: 'data', last_page: 'last_page', current_page: 'page', total: 'total' },
+                ajaxResponse: function(url, params, response) {
+                    try{ if(response && response.last_page !== undefined){ this.setMaxPage(parseInt(response.last_page) || 1); } }catch(e){}
+                    return (response && response.data) ? response.data : [];
+                },
+                columns: [
+                    { title: 'Sl No', formatter: 'rownum', width: 60, hozAlign: 'center' },
+                    { title: 'From Godown', field: 'fromGodownDesc' },
+                    { title: 'To Godown', field: 'toGodownDesc' },
+                    { title: 'Created By', field: 'createdBy' },
+                    { title: 'Created Date', field: 'createdDate' },
+                    { title: 'Actions', formatter: function(cell, formatterParams){
+                            var id = cell.getRow().getData().transferId;
+                            var btn = document.createElement('button'); btn.className='btn btn-sm btn-primary'; btn.textContent='✎ Edit';
+                            btn.addEventListener('click', function(){ window.location.href = '/Billing/StockTransfer?transferId=' + id; });
+                            return btn;
+                        }, hozAlign: 'center', width: 110 }
+                ]
+            }).then(function(tab){
+                window._stockTransfersTable = tab;
+
+                function reloadWithFilters() {
+                    var params = {};
+                    var s = document.getElementById('filterStart').value;
+                    var e = document.getElementById('filterEnd').value;
+                    var fg = document.getElementById('filterFromGodown').value;
+                    var tg = document.getElementById('filterToGodown').value;
+                    if (s) params.startDate = s;
+                    if (e) params.endDate = e;
+                    if (fg) params.fromGodown = fg;
+                    if (tg) params.toGodown = tg;
+                    try { tab.setData('/Billing/GetStockTransfers', params); } catch (ex) { console.warn('reload failed', ex); }
+                }
+
+                // attach filter listeners
+                ['filterStart','filterEnd','filterFromGodown','filterToGodown'].forEach(function(id){
+                    var el = document.getElementById(id);
+                    if (!el) return;
+                    el.addEventListener('change', function(){ reloadWithFilters(); });
+                });
+
+                // initial load with prefilled date range (current month) and other filters
+                // if filter inputs already have values (we set defaults server-side), call reload
+                setTimeout(function(){ reloadWithFilters(); }, 10);
+            }).catch(function(err){ console.error('Tabulator stock transfers init failed', err); });
+        });
+    </script>
+}

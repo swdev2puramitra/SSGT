@@ -1,0 +1,833 @@
+/* ============================================================
+   REPORTS STYLES - Packing Dashboard
+   ============================================================ */
+
+* {
+    box-sizing: border-box;
+}
+
+.packing-dashboard {
+    padding: 10px;
+    line-height: 1.4;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-header {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #00B0FF;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.dashboard-header h3 {
+    color: #ffffff;
+    font-size: 20px;
+    margin: 0 0 8px 0;
+    padding: 0;
+}
+
+.bill-info {
+    margin-top: 0;
+    margin-bottom: 0;
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.bill-no,
+.bill-name {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    margin: 0;
+    padding: 0;
+    flex: 0 1 auto;
+}
+
+.bill-no .label,
+.bill-name .label {
+    color: #b0b0b0;
+    font-weight: 600;
+    white-space: nowrap;
+    margin: 0;
+    padding: 0;
+}
+
+.bill-no .value,
+.bill-name .value {
+    color: #00B0FF;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.info-row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 30px;
+    margin-bottom: 0;
+}
+
+.info-group {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    align-items: center;
+    flex: 0 1 auto;
+    min-width: auto;
+}
+
+.info-group label {
+    font-weight: 600;
+    color: #b0b0b0;
+    min-width: auto;
+    white-space: nowrap;
+}
+
+.info-value {
+    color: #00B0FF;
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.packing-content {
+    margin-bottom: 10px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+}
+
+.godown-section {
+    display: flex;
+    flex-direction: column;
+    background-color: #0d0b09;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.godown-header {
+    background-color: #1a1816;
+    padding: 8px 12px;
+    border-bottom: 2px solid #00B0FF;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    /* Aligns godown name and case count on single line */
+}
+
+.godown-header h4 {
+    color: #00B0FF;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    /* Prevents text wrapping within h4 elements */
+}
+
+.godown-header .case-count {
+    color: #ffd700;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    margin-left: auto;
+    padding-left: 10px;
+}
+
+/* Stack godown sections vertically so each godown's dispatch columns remain readable. */
+.godowns-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin: 12px 0 0 0;
+    width: 100%;
+}
+
+/* Table wrapper with max-height to show at least 10 rows */
+.packing-table-wrapper {
+    display: flex;
+    flex-direction: column;
+    max-height: 520px;
+    overflow: hidden;
+}
+
+.packing-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #ffffff;
+    min-width: 300px;
+    font-size: 12px;
+}
+
+.packing-table thead {
+    background-color: #1a1816;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    flex-shrink: 0;
+}
+
+.packing-table thead th {
+    padding: 6px 6px;
+    text-align: left;
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.packing-table tbody {
+    overflow-y: auto;
+    display: block;
+    max-height: 460px;
+}
+
+.packing-table tbody tr {
+    display: table;
+    width: 100%;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    min-height: 38px;
+    table-layout: fixed;
+}
+
+.packing-table tbody tr:hover {
+    background-color: #302c32;
+}
+
+.packing-table tbody tr.packed-item-row {
+    background-color: rgba(0, 176, 255, 0.05);
+}
+
+.packing-table tbody tr.packed-item-row:hover {
+    background-color: rgba(0, 176, 255, 0.1);
+}
+
+.packing-table thead {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.packing-table tbody td {
+    padding: 6px 6px;
+    color: #ffffff;
+    vertical-align: middle;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sl-no {
+    font-weight: 600;
+    color: #00B0FF;
+    width: 10%;
+    text-align: left;
+}
+
+.item-name {
+    font-weight: 500;
+    width: 50%;
+    word-break: break-word;
+}
+
+.stock-info {
+    color: #b0b0b0;
+    width: 40%;
+    text-align: left;
+}
+
+.stock-detail {
+    display: inline-block;
+    padding: 3px 8px;
+    background-color: rgba(0, 176, 255, 0.1);
+    border: 1px solid rgba(0, 176, 255, 0.3);
+    border-radius: 3px;
+    font-size: 11px;
+    color: #00B0FF;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.checkbox-cell {
+    text-align: center;
+    width: 10%;
+    min-width: 50px;
+}
+
+.item-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #00B0FF;
+}
+
+.item-checkbox:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    accent-color: #00B0FF;
+}
+
+/* Packing history icon and indicator styles */
+.checkmark-icon {
+    font-size: 14px;
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.packing-info-icon {
+    display: inline-flex;
+    align-items: center;
+    cursor: help;
+    transition: transform 0.2s ease;
+}
+
+.packing-info-icon:hover {
+    transform: scale(1.15);
+}
+
+.packing-info-icon::before {
+    content: '';
+    display: inline-block;
+}
+
+.packing-actions {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    padding: 10px;
+    background-color: #1a1816;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background-color: #00E676;
+    color: #000;
+}
+
+.btn-primary:hover {
+    background-color: #00cc66;
+}
+
+.btn-secondary {
+    background-color: #666;
+    color: #fff;
+}
+
+.btn-secondary:hover {
+    background-color: #555;
+}
+
+.alert {
+    padding: 10px 12px;
+    border-radius: 4px;
+    margin: 10px 0;
+    font-size: 12px;
+}
+
+.alert-info {
+    background-color: #1a1816;
+    border-left: 3px solid #00B0FF;
+    color: #00B0FF;
+}
+
+/* ============================================================
+   VIEW BILLS STYLES
+   ============================================================ */
+
+.filters-section {
+    background-color: #1a1816;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 12px;
+}
+
+.filter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 150px;
+}
+
+.filter-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #b0b0b0;
+}
+
+.filter-input,
+.filter-select {
+    padding: 6px 8px;
+    font-size: 12px;
+    background-color: #0d0b09;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    color: #ffffff;
+    height: 32px;
+}
+
+.filter-input::placeholder {
+    color: #666;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+    outline: none;
+    border-color: #00B0FF;
+    box-shadow: 0 0 3px rgba(0, 176, 255, 0.3);
+}
+
+.filter-actions {
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+}
+
+.results-info {
+    padding: 8px 12px;
+    background-color: #1a1816;
+    border-left: 3px solid #00B0FF;
+    margin-bottom: 10px;
+    font-size: 12px;
+    border-radius: 3px;
+}
+
+.results-info p {
+    margin: 0;
+}
+
+.results-info strong {
+    color: #00B0FF;
+}
+
+/* AG Grid Theme Customizations */
+.ag-theme-custom {
+    --ag-font-size: 12px;
+    --ag-header-height: 36px;
+    --ag-row-height: 36px;
+    --ag-header-background-color: #1a1816;
+    --ag-header-foreground-color: #ffffff;
+    --ag-odd-row-background-color: #0d0b09;
+    --ag-row-hover-color: #1a1816;
+    --ag-border-color: rgba(255, 255, 255, 0.05);
+    background-color: #0d0b09;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+}
+
+/* Do not override header-cell padding - let ag-grid-theme.css rule apply */
+
+.ag-theme-custom .ag-row:hover {
+    background-color: #1a1816;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    width: 100%;
+    height: 100%;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 11px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.btn-packing {
+    background-color: #00B0FF;
+    color: #000;
+}
+
+.btn-packing:hover {
+    background-color: #0099d4;
+}
+
+.btn-edit {
+    background-color: #FFC107;
+    color: #000;
+}
+
+.btn-edit:hover {
+    background-color: #FFB300;
+}
+
+.btn-print {
+    background-color: #28A745;
+    color: #fff;
+}
+
+.btn-print:hover {
+    background-color: #218838;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #b0b0b0;
+    font-size: 14px;
+}
+
+.btn-close:hover {
+    color: #ffffff;
+}
+
+/* ============================================================
+   MOBILE OPTIMIZATIONS
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .packing-dashboard {
+        padding: 8px;
+    }
+
+    .filters-section {
+        padding: 8px;
+        margin-bottom: 10px;
+    }
+
+    .filter-row {
+        gap: 8px;
+    }
+
+    .filter-group {
+        min-width: 120px;
+        flex: 0 1 calc(50% - 4px);
+    }
+
+    .filter-input,
+    .filter-select {
+        padding: 5px 6px;
+        font-size: 11px;
+        height: 30px;
+    }
+
+    .filter-actions {
+        gap: 4px;
+    }
+
+    .filter-actions .btn {
+        padding: 5px 8px;
+        font-size: 11px;
+    }
+
+    .results-info {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+
+    .ag-theme-custom {
+        --ag-font-size: 11px;
+        --ag-header-height: 34px;
+        --ag-row-height: 34px;
+    }
+
+    .action-buttons {
+        gap: 2px;
+    }
+
+    .btn-sm {
+        padding: 3px 6px;
+        font-size: 10px;
+        gap: 2px;
+    }
+    .dashboard-header {
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+    }
+
+    .dashboard-header h3 {
+        font-size: 18px;
+        margin: 0 0 6px 0;
+    }
+
+    .info-row {
+        flex-direction: row;
+        gap: 20px;
+    }
+
+    .info-group {
+        flex: 0 1 auto;
+        min-width: auto;
+    }
+
+    .godown-section {
+        margin-bottom: 10px;
+    }
+
+    .godown-header {
+        padding: 6px 10px;
+    }
+
+    .godown-header h4 {
+        font-size: 13px;
+    }
+
+    .packing-table-wrapper {
+        max-height: 450px;
+    }
+
+    .packing-table tbody {
+        max-height: 400px;
+    }
+
+    .packing-table tbody td {
+        padding: 5px 5px;
+        font-size: 11px;
+    }
+
+    .packing-table thead th {
+        padding: 5px 5px;
+        font-size: 10px;
+    }
+
+    .stock-detail {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+
+    .checkbox-cell {
+        width: 50px;
+        min-width: 50px;
+    }
+
+    .sl-no {
+        width: 45px;
+        min-width: 45px;
+    }
+
+    .item-checkbox {
+        width: 16px;
+        height: 16px;
+    }
+
+    .btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .packing-actions {
+        flex-direction: row;
+        gap: 6px;
+        padding: 8px;
+    }
+
+    .btn {
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .packing-dashboard {
+        padding: 6px;
+    }
+
+    .dashboard-header {
+        margin-bottom: 6px;
+        padding-bottom: 6px;
+    }
+
+    .dashboard-header h3 {
+        font-size: 16px;
+        margin: 0 0 4px 0;
+    }
+
+    .info-group label {
+        min-width: auto;
+        font-size: 11px;
+    }
+
+    .info-value {
+        font-size: 11px;
+    }
+
+    .godown-section {
+        margin-bottom: 8px;
+        border-radius: 3px;
+    }
+
+    .godown-header {
+        padding: 5px 8px;
+    }
+
+    .godown-header h4 {
+        font-size: 12px;
+    }
+
+    .packing-table-wrapper {
+        max-height: 400px;
+    }
+
+    .packing-table tbody {
+        max-height: 350px;
+    }
+
+    .packing-table {
+        font-size: 10px;
+    }
+
+    .packing-table tbody td {
+        padding: 4px 4px;
+        font-size: 10px;
+    }
+
+    .packing-table thead th {
+        padding: 4px 4px;
+        font-size: 9px;
+    }
+
+    .sl-no {
+        width: 35px;
+        min-width: 35px;
+    }
+
+    .item-name {
+        font-size: 10px;
+    }
+
+    .stock-detail {
+        font-size: 9px;
+        padding: 2px 4px;
+    }
+
+    .checkbox-cell {
+        width: 40px;
+        min-width: 40px;
+    }
+
+    .item-checkbox {
+        width: 14px;
+        height: 14px;
+    }
+
+    .packing-actions {
+        gap: 4px;
+        padding: 6px;
+    }
+
+    .btn {
+        padding: 5px 8px;
+        font-size: 10px;
+        flex: 1;
+    }
+
+    .filters-section {
+        padding: 6px;
+    }
+
+    .filter-row {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .filter-group {
+        width: 100%;
+        min-width: 100%;
+    }
+
+    .filter-input,
+    .filter-select {
+        padding: 4px 6px;
+        font-size: 10px;
+        height: 28px;
+    }
+
+    .filter-actions {
+        gap: 4px;
+        width: 100%;
+    }
+
+    .filter-actions .btn {
+        flex: 1;
+        padding: 4px 6px;
+        font-size: 10px;
+    }
+
+    .ag-theme-custom {
+        --ag-font-size: 10px;
+        --ag-header-height: 32px;
+        --ag-row-height: 32px;
+    }
+
+    .action-buttons {
+        gap: 2px;
+        flex-direction: row;
+    }
+
+    .btn-sm {
+        padding: 2px 4px;
+        font-size: 9px;
+        width: auto;
+        justify-content: flex-start;
+    }
+}
+

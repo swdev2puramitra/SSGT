@@ -1,0 +1,84 @@
+/* Stock lookup and stock-management page styles */
+.stock-lookup {
+    position: relative;
+}
+
+.stock-suggestions {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    max-height: 240px;
+    overflow-y: auto;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+}
+
+.stock-suggestions.is-visible {
+    display: block;
+}
+
+.stock-suggestion-option,
+.stock-autocomplete-option {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 0;
+    background-color: #fff;
+    color: #212529 !important;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    text-align: left;
+    opacity: 1;
+    cursor: pointer;
+}
+
+.stock-suggestion-option:hover,
+.stock-suggestion-option:focus,
+.stock-autocomplete-option:hover,
+.stock-autocomplete-option:focus {
+    background-color: #d9efff;
+    color: #111827 !important;
+    outline: none;
+}
+
+.stock-autocomplete {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background-image: none !important;
+}
+
+.stock-receipt-form {
+    width: 100%;
+    max-width: none;
+}
+
+.stock-receipt-form .tabulator-wrapper {
+    width: 100%;
+    overflow: hidden;
+}
+
+.stock-receipt-form #stockReceiptGrid {
+    width: 100% !important;
+    min-width: 0;
+    min-height: 260px;
+}
+
+.stock-receipt-form .tabulator {
+    width: 100% !important;
+    min-height: 260px;
+}
+
+.stock-receipt-form .tabulator-tableholder {
+    overflow-x: hidden !important;
+    overflow-y: hidden !important;
+}
+
+.stock-receipt-form .tabulator-cell {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

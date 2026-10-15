@@ -1,0 +1,290 @@
+/* ================================
+   JQGRID CUSTOM THEME
+   Aligned with site's dark theme (theme-dark.css)
+   Matches View Stock Transfer UI/UX
+================================ */
+
+:root {
+    /* Theme colors from theme.css */
+    --jqgrid-bg-dark: #0d0b09;
+    --jqgrid-surface: #1a1816;
+    --jqgrid-surface-hover: #302c32;
+    --jqgrid-border: rgba(255, 255, 255, 0.08);
+    --jqgrid-text-primary: #ffffff;
+    --jqgrid-text-secondary: #b0b0b0;
+    --jqgrid-header-bg: #1a1816;
+    --jqgrid-primary-color: #00B0FF;
+    --jqgrid-primary-hover: #00D4FF;
+}
+
+/* Main jqGrid Container */
+.jqgrid-wrapper {
+    display: block;
+    padding: 8px 0;
+    background-color: var(--jqgrid-bg-dark);
+    overflow-x: auto;
+}
+
+.jqgrid-wrapper .ui-jqgrid {
+    background-color: var(--jqgrid-surface);
+    border: 1px solid var(--jqgrid-border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0 auto;
+    min-width: 320px;
+}
+
+/* Grid Header */
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-hdiv {
+    background-color: var(--jqgrid-header-bg);
+    border-bottom: 1px solid var(--jqgrid-border);
+}
+
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-htable {
+    background-color: var(--jqgrid-header-bg);
+}
+
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-htable th {
+    background-color: var(--jqgrid-header-bg);
+    color: var(--jqgrid-text-primary);
+    border-right: 1px solid var(--jqgrid-border);
+    padding: 4px 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    height: 28px;
+    /*line-height: 28px;*/
+}
+
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-htable th:last-child {
+    border-right: none;
+}
+
+/* Grid Body */
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-bdiv {
+    background-color: var(--jqgrid-surface);
+    border-top: none;
+}
+
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-btable {
+    background-color: var(--jqgrid-surface);
+    border-collapse: collapse;
+}
+
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-btable tbody tr {
+    background-color: var(--jqgrid-surface);
+    border-bottom: 1px solid var(--jqgrid-border);
+}
+
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-btable tbody tr:hover {
+    background-color: var(--jqgrid-surface-hover);
+}
+
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-btable td {
+    color: var(--jqgrid-text-primary);
+    padding: 4px 6px;
+    font-size: 12px;
+    border-right: 1px solid var(--jqgrid-border);
+    height: 26px;
+    line-height: 26px;
+    text-align: left;
+}
+
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-btable td:last-child {
+    border-right: none;
+}
+
+/* Center alignment for specific columns */
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-btable td.jq-center,
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-btable td.ui-align-center {
+    text-align: center;
+}
+
+/* Footer/Pager */
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-pager {
+    background-color: var(--jqgrid-surface);
+    border-top: 1px solid var(--jqgrid-border);
+    padding: 6px 12px;
+}
+
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-pager .ui-pager-control {
+    background-color: transparent;
+    border: none;
+}
+
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-pager .ui-pg-selbox {
+    background-color: var(--jqgrid-header-bg);
+    color: var(--jqgrid-text-primary);
+    border: 1px solid var(--jqgrid-border);
+    padding: 4px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-pager button,
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-pager input[type="button"] {
+    background-color: var(--jqgrid-primary-color);
+    color: var(--jqgrid-text-primary);
+    border: none;
+    padding: 4px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    margin: 0 2px;
+}
+
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-pager button:hover,
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-pager input[type="button"]:hover {
+    background-color: var(--jqgrid-primary-hover);
+}
+
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-pager .ui-pager-control > span {
+    color: var(--jqgrid-text-secondary);
+}
+
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-pager .ui-state-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Action Buttons */
+.jqgrid-wrapper .edit-transfer {
+    background-color: var(--jqgrid-primary-color);
+    color: var(--jqgrid-text-primary);
+    border: none;
+    padding: 6px 12px;
+    margin: 4px !important; /* Ensure edit button has 4px margin */
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+}
+
+.jqgrid-wrapper .edit-transfer:hover {
+    background-color: var(--jqgrid-primary-hover);
+}
+
+.jqgrid-wrapper .edit-transfer:active {
+    opacity: 0.8;
+}
+
+/* Column Resizer */
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-resize-mark {
+    background-color: var(--jqgrid-primary-color);
+}
+
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-htable th .ui-jqgrid-resize {
+    background-color: var(--jqgrid-border);
+}
+
+/* Sortable header indicator */
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-htable th.ui-state-default:hover {
+    background-color: var(--jqgrid-surface-hover);
+}
+
+/* Selection row highlight */
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-btable tbody tr.jqgrow.ui-state-highlight {
+    background-color: var(--jqgrid-surface-hover);
+}
+
+/* No records message */
+.jqgrid-wrapper .ui-jqgrid .jqgrid-empty-message {
+    color: var(--jqgrid-text-secondary);
+    padding: 20px;
+    text-align: center;
+}
+
+/* Responsive wrapper */
+@media (max-width: 768px) {
+    .jqgrid-wrapper .ui-jqgrid {
+        overflow-x: auto;
+    }
+
+    .jqgrid-wrapper .ui-jqgrid .ui-jqgrid-bdiv {
+        overflow-x: auto;
+    }
+}
+
+/* Print styles */
+@media print {
+    .jqgrid-wrapper .ui-jqgrid .ui-jqgrid-pager {
+        display: none;
+    }
+}
+
+/* ---------- Additional overrides to remove scrollbars. jqGrid may insert a temporary 'jqgfirstrow' spacer row during automatic sizing; hide/remove it only after initialization in JS to avoid interfering with measurements. ---------- */
+/* Prevent horizontal scroll on the grid and avoid forcing page scrollbar */
+.jqgrid-wrapper {
+    overflow-x: hidden !important;
+}
+
+.jqgrid-wrapper .ui-jqgrid,
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-bdiv {
+    overflow-x: hidden !important; /* remove horizontal scrollbar inside grid */
+    -ms-overflow-style: none !important; /* IE/Edge */
+    scrollbar-width: none !important; /* Firefox */
+}
+
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-bdiv::-webkit-scrollbar,
+.jqgrid-wrapper .ui-jqgrid::-webkit-scrollbar {
+    display: none !important; /* Chrome/Safari */
+}
+
+/* Ensure table doesn't exceed container width - handled by jqGrid's own sizing */
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-btable {
+    width: 100% !important;
+}
+
+/* Ensure header inner div and body cells use same box model and padding so widths align */
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-htable th div,
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-btable td {
+    box-sizing: border-box !important;
+    padding: 0 4px !important; /* consistent left/right padding */
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Ensure header divs don't add extra height or margins */
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-htable th div {
+    box-sizing: border-box !important;
+    padding: 0 4px !important;
+    height: 28px !important;
+    line-height: 28px !important;
+    margin: 0 !important;
+}
+
+/* Remove unexpected extra borders/gaps between header and body */
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-htable th,
+.jqgrid-wrapper .ui-jqgrid .ui-jqgrid-btable td {
+    border-right: 1px solid var(--jqgrid-border) !important;
+}
+
+/* Aggressively hide the jqGrid placeholder first row if present */
+.ui-jqgrid .jqgfirstrow,
+.ui-jqgrid tr.jqgfirstrow,
+.ui-jqgrid #jqg_first_row,
+.ui-jqgrid .jqgfirstrow td,
+.ui-jqgrid tr.jqgfirstrow td {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    line-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+}
+
+/* If jqgfirstrow is added as a spacer row on thead or tbody, collapse it */
+.ui-jqgrid thead tr.jqgfirstrow,
+.ui-jqgrid tbody tr.jqgfirstrow {
+    height: 0 !important;
+}
+
+/* Compact the overall page container margins to avoid page scrollbar when grid fits */
+.container-fluid {
+    overflow-x: hidden !important;
+}
+
