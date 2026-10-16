@@ -638,13 +638,15 @@
                     try {
                         var stateType = (document.querySelector('input[name="stateType"]:checked') || {}).value || 'in';
                         if (stateType === 'in') {
-                            document.getElementById('cgst').value = sumCgst.toFixed(2);
-                            document.getElementById('sgst').value = sumSgst.toFixed(2);
+                            var invoiceTaxable = parseFloat(document.getElementById('taxableAmount').value || '0') || 0;
+                            document.getElementById('cgst').value = (invoiceTaxable * 0.09).toFixed(2);
+                            document.getElementById('sgst').value = (invoiceTaxable * 0.09).toFixed(2);
                             document.getElementById('igst').value = '0.00';
                         } else {
                             document.getElementById('cgst').value = '0.00';
                             document.getElementById('sgst').value = '0.00';
-                            document.getElementById('igst').value = sumIgst.toFixed(2);
+                            var invoiceTaxable = parseFloat(document.getElementById('taxableAmount').value || '0') || 0;
+                            document.getElementById('igst').value = (invoiceTaxable * 0.18).toFixed(2);
                         }
                     } catch (e) { }
                     // compute total bill amount and balance
@@ -1640,9 +1642,9 @@
                             IsPriceModified: !!isModifiedFlag,
                             TotalCost: Number(r.totalCost || 0) || 0,
                             // prefer sending percentages from client (cgst, sgst, igst stored as percent values on row)
-                            CgstPercent: Number(r.cgst || 0) || 0,
-                            SgstPercent: Number(r.sgst || 0) || 0,
-                            IgstPercent: Number(r.igst || 0) || 0,
+                            CgstPercent: (!isEstimate && isInState) ? 9 : 0,
+                            SgstPercent: (!isEstimate && isInState) ? 9 : 0,
+                            IgstPercent: (!isEstimate && !isInState) ? 18 : 0,
                             // keep absolute amounts for backward compatibility (server will compute amounts from percents)
                             CgstAmount: Number(r.cgstAmount || 0) || 0,
                             SgstAmount: Number(r.sgstAmount || 0) || 0,

@@ -65,36 +65,66 @@ namespace WebApp.Controllers
                     return Json(new { success = false, message = "Select some, but not all, invoice items to split." });
 
                 var currentUserId = int.TryParse(User.FindFirst("UserId")?.Value, out var uid) ? uid : 0;
+                var splitInState = source.IsInState ?? true;
                 var (_, splitSequence) = GenerateDocumentNumber(_context, false);
                 var splitInvoiceNo = "E" + splitSequence.ToString("D4");
-                var split = new FwInvoice { BillId = source.BillId, BillNo = source.BillNo, CustomerId = source.CustomerId,
-                    CustomerType = source.CustomerType, IsEstimateInvoice = "I", InvoiceNo = splitInvoiceNo,
-                    CreatedBy = currentUserId, CreatedDate = DateTime.Now, IsInState = source.IsInState,
+                var split = new FwInvoice
+                {
+                    BillId = source.BillId,
+                    BillNo = source.BillNo,
+                    CustomerId = source.CustomerId,
+                    CustomerType = source.CustomerType,
+                    IsEstimateInvoice = "I",
+                    InvoiceNo = splitInvoiceNo,
+                    CreatedBy = currentUserId,
+                    CreatedDate = DateTime.Now,
+                    IsInState = source.IsInState,
                     CustGstin = source.CustGstin,
                     VehicleNo = string.IsNullOrWhiteSpace(vehicleNo) ? source.VehicleNo : vehicleNo.Trim(),
                     OwnerName = string.IsNullOrWhiteSpace(ownerName) ? source.OwnerName : ownerName.Trim(),
-                    Pos = source.Pos, StateCode = source.StateCode,
-                    Pincode = source.Pincode, Loc = source.Loc, Invoice = source.Invoice,
+                    Pos = source.Pos,
+                    StateCode = source.StateCode,
+                    Pincode = source.Pincode,
+                    Loc = source.Loc,
+                    Invoice = source.Invoice,
                     WayBill = string.IsNullOrWhiteSpace(eWayBillNo) ? source.WayBill : eWayBillNo.Trim(),
-                    DiscountPerItem = source.DiscountPerItem, DiscountPercentage = source.DiscountPercentage, AmountPaid = 0m };
+                    DiscountPerItem = source.DiscountPerItem,
+                    DiscountPercentage = source.DiscountPercentage,
+                    AmountPaid = 0m
+                };
                 _context.FwInvoices.Add(split);
                 await _context.SaveChangesAsync();
                 foreach (var item in selected)
                 {
-                    _context.FwInvoiceItems.Add(new FwInvoiceItem { Invoice = split, InvoiceId = split.InvoiceId, BillId = source.BillId,
-                        ItemId = item.ItemId, ItemTypeId = item.ItemTypeId, Quantity = item.Quantity, ItemCost = item.ItemCost,
-                        TotalCost = item.TotalCost, Cgst = item.Cgst, Sgst = item.Sgst, Igst = item.Igst, SlNo = item.SlNo,
-                        ChangedPrice = item.ChangedPrice, SellType = item.SellType, SellQty = item.SellQty,
-                        OriginalCost = item.OriginalCost, IsPriceModified = item.IsPriceModified });
+                    _context.FwInvoiceItems.Add(new FwInvoiceItem
+                    {
+                        Invoice = split,
+                        InvoiceId = split.InvoiceId,
+                        BillId = source.BillId,
+                        ItemId = item.ItemId,
+                        ItemTypeId = item.ItemTypeId,
+                        Quantity = item.Quantity,
+                        ItemCost = item.ItemCost,
+                        TotalCost = item.TotalCost,
+                        Cgst = splitInState ? 9m : null,
+                        Sgst = splitInState ? 9m : null,
+                        Igst = splitInState ? null : 18m,
+                        SlNo = item.SlNo,
+                        ChangedPrice = item.ChangedPrice,
+                        SellType = item.SellType,
+                        SellQty = item.SellQty,
+                        OriginalCost = item.OriginalCost,
+                        IsPriceModified = item.IsPriceModified
+                    });
                     _context.FwInvoiceItems.Remove(item);
                 }
-                static decimal Tax(FwInvoiceItem x, decimal? rate, decimal discount) => Math.Round(x.TotalCost * (1m - discount / 100m) * (rate ?? 0m) / 100m, 2, MidpointRounding.AwayFromZero);
+                static decimal Tax(FwInvoiceItem x, decimal rate, decimal discount) => Math.Round(x.TotalCost * (1m - discount / 100m) * rate / 100m, 2, MidpointRounding.AwayFromZero);
                 var remaining = source.FwInvoiceItems.Except(selected).ToList();
                 var discountPercent = Math.Clamp(source.DiscountPercentage ?? source.DiscountPerItem ?? 0m, 0m, 100m);
                 var splitBase = Math.Round(selected.Sum(x => x.TotalCost) * (1m - discountPercent / 100m), 2);
                 var remainingBase = Math.Round(remaining.Sum(x => x.TotalCost) * (1m - discountPercent / 100m), 2);
-                var splitTax = selected.Sum(x => Tax(x, x.Cgst, discountPercent) + Tax(x, x.Sgst, discountPercent) + Tax(x, x.Igst, discountPercent));
-                var remainingTax = remaining.Sum(x => Tax(x, x.Cgst, discountPercent) + Tax(x, x.Sgst, discountPercent) + Tax(x, x.Igst, discountPercent));
+                var splitTax = selected.Sum(x => Tax(x, splitInState ? 9m : 0m, discountPercent) + Tax(x, splitInState ? 9m : 0m, discountPercent) + Tax(x, splitInState ? 0m : 18m, discountPercent));
+                var remainingTax = remaining.Sum(x => Tax(x, splitInState ? 9m : 0m, discountPercent) + Tax(x, splitInState ? 9m : 0m, discountPercent) + Tax(x, splitInState ? 0m : 18m, discountPercent));
                 split.BillAmount = splitBase; split.TotalBillAmount = splitBase + splitTax;
                 source.BillAmount = remainingBase; source.TotalBillAmount = remainingBase + remainingTax;
 
@@ -1728,9 +1758,9 @@ namespace WebApp.Controllers
                             // Tax values in the request are rates. Calculate the amounts
                             // from the authoritative taxable value so persisted totals
                             // cannot be changed by a client supplied TotalCost.
-                            var cgstPercent = Math.Clamp(it.CgstPercent ?? 0m, 0m, 100m);
-                            var sgstPercent = Math.Clamp(it.SgstPercent ?? 0m, 0m, 100m);
-                            var igstPercent = Math.Clamp(it.IgstPercent ?? 0m, 0m, 100m);
+                            var cgstPercent = request.IsEstimate ? Math.Clamp(it.CgstPercent ?? 0m, 0m, 100m) : (request.IsInState != false ? 9m : 0m);
+                            var sgstPercent = request.IsEstimate ? Math.Clamp(it.SgstPercent ?? 0m, 0m, 100m) : (request.IsInState != false ? 9m : 0m);
+                            var igstPercent = request.IsEstimate ? Math.Clamp(it.IgstPercent ?? 0m, 0m, 100m) : (request.IsInState == false ? 18m : 0m);
                             var cgstAmount = Math.Round(taxable * cgstPercent / 100m, 2, MidpointRounding.AwayFromZero);
                             var sgstAmount = Math.Round(taxable * sgstPercent / 100m, 2, MidpointRounding.AwayFromZero);
                             var igstAmount = Math.Round(taxable * igstPercent / 100m, 2, MidpointRounding.AwayFromZero);
