@@ -662,9 +662,9 @@
                             // For invoices balance = bill amount + taxes depending on in-state flag - amount paid
                             var stateType = (document.querySelector('input[name="stateType"]:checked') || {}).value || 'in';
                             if (stateType === 'in') {
-                                totalBill = billAmt + cg + sg;
+                            totalBill = taxableAmt + cg + sg;
                             } else {
-                                totalBill = billAmt + ig;
+                            totalBill = taxableAmt + ig;
                             }
                         }
 

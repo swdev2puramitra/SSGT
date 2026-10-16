@@ -80,11 +80,13 @@ namespace WebApp.Controllers
                         OriginalCost = item.OriginalCost, IsPriceModified = item.IsPriceModified });
                     _context.FwInvoiceItems.Remove(item);
                 }
-                static decimal Tax(FwInvoiceItem x, decimal? rate) => Math.Round(x.TotalCost * (rate ?? 0m) / 100m, 2, MidpointRounding.AwayFromZero);
+                static decimal Tax(FwInvoiceItem x, decimal? rate, decimal discount) => Math.Round(x.TotalCost * (1m - discount / 100m) * (rate ?? 0m) / 100m, 2, MidpointRounding.AwayFromZero);
                 var remaining = source.FwInvoiceItems.Except(selected).ToList();
-                var splitBase = selected.Sum(x => x.TotalCost); var remainingBase = remaining.Sum(x => x.TotalCost);
-                var splitTax = selected.Sum(x => Tax(x, x.Cgst) + Tax(x, x.Sgst) + Tax(x, x.Igst));
-                var remainingTax = remaining.Sum(x => Tax(x, x.Cgst) + Tax(x, x.Sgst) + Tax(x, x.Igst));
+                var discountPercent = Math.Clamp(source.DiscountPercentage ?? source.DiscountPerItem ?? 0m, 0m, 100m);
+                var splitBase = Math.Round(selected.Sum(x => x.TotalCost) * (1m - discountPercent / 100m), 2);
+                var remainingBase = Math.Round(remaining.Sum(x => x.TotalCost) * (1m - discountPercent / 100m), 2);
+                var splitTax = selected.Sum(x => Tax(x, x.Cgst, discountPercent) + Tax(x, x.Sgst, discountPercent) + Tax(x, x.Igst, discountPercent));
+                var remainingTax = remaining.Sum(x => Tax(x, x.Cgst, discountPercent) + Tax(x, x.Sgst, discountPercent) + Tax(x, x.Igst, discountPercent));
                 split.BillAmount = splitBase; split.TotalBillAmount = splitBase + splitTax; split.BalanceAmount = split.TotalBillAmount;
                 source.BillAmount = remainingBase; source.TotalBillAmount = remainingBase + remainingTax;
                 source.AmountPaid = Math.Min(source.AmountPaid ?? 0m, source.TotalBillAmount.Value); source.BalanceAmount = source.TotalBillAmount - source.AmountPaid;
@@ -1629,9 +1631,9 @@ namespace WebApp.Controllers
                             .ToDictionary(g => g.Key, g => g.ToDictionary(x => x.ItemTypeId, x => x.QtyPerType));
 
                         // invoice-level discount fallback: prefer request.DiscountPerItem (percent 0-100), else 0
-                        var headerDiscountPercent = request.DiscountPerItem.HasValue && request.DiscountPerItem.Value != 0m
-                            ? request.DiscountPerItem.Value
-                            : 0m;
+                        var headerDiscountPercent = request.DiscountPercentage.HasValue && request.DiscountPercentage.Value != 0m
+                            ? request.DiscountPercentage.Value
+                            : (request.DiscountPerItem ?? 0m);
                         if (headerDiscountPercent < 0m) headerDiscountPercent = 0m;
                         if (headerDiscountPercent > 100m) headerDiscountPercent = 100m;
 
