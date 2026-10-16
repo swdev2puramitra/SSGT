@@ -1337,10 +1337,23 @@ namespace WebApp.Controllers
                             .AsNoTracking()
                             .Where(x => x.BillId == billEntity.BillId)
                             .ToList();
-                        if (persistedItems.Count != (request.Items?.Count(x => x != null && x.ItemId > 0 && x.Quantity > 0) ?? 0) ||
-                            persistedItems.Any(x => x.ItemCost < 0m || x.TotalCost != Math.Round(x.Quantity * x.ItemCost, 2, MidpointRounding.AwayFromZero)))
+                        var expectedItemCount = request.Items?.Count(x => x != null && x.ItemId > 0 && x.Quantity > 0) ?? 0;
+                        if (persistedItems.Count != expectedItemCount)
                         {
-                            throw new InvalidOperationException("Persisted bill item costs failed validation.");
+                            throw new InvalidOperationException($"Persisted bill item count failed validation (expected {expectedItemCount}, found {persistedItems.Count}).");
+                        }
+
+                        const decimal persistedCostTolerance = 0.01m;
+                        var persistedCostMismatch = persistedItems.FirstOrDefault(x =>
+                            x.ItemCost < 0m ||
+                            Math.Abs(x.TotalCost - Math.Round(x.Quantity * x.ItemCost, 2, MidpointRounding.AwayFromZero)) > persistedCostTolerance);
+                        if (persistedCostMismatch != null)
+                        {
+                            var expectedTotal = Math.Round(persistedCostMismatch.Quantity * persistedCostMismatch.ItemCost, 2, MidpointRounding.AwayFromZero);
+                            throw new InvalidOperationException(
+                                $"Persisted bill item cost failed validation for item {persistedCostMismatch.ItemId} " +
+                                $"(quantity {persistedCostMismatch.Quantity}, cost {persistedCostMismatch.ItemCost:0.00}, " +
+                                $"stored total {persistedCostMismatch.TotalCost:0.00}, expected {expectedTotal:0.00}).");
                         }
                         tx.Commit();
 
@@ -1641,7 +1654,7 @@ namespace WebApp.Controllers
                     $"BillId={request?.BillId}, CustomerId={request?.CustomerId}",
                     ex);
                 System.Diagnostics.Debug.WriteLine($"Error saving fireworks billing: {ex.Message}");
-                return Json(new { success = false, message = "Error saving billing" });
+                return Json(new { success = false, message = $"Error saving billing: {ex.Message}" });
             }
         }
 
