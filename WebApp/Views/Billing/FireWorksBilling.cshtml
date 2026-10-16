@@ -1557,8 +1557,10 @@
             withTable(function(t) { try { attachRowEditHandler(t); } catch (e) { } });
 
             // Save as estimate
+            var saveInProgress = false;
             document.getElementById('generateInvoice').addEventListener('click', function(e) {
                 e.preventDefault();
+                if (saveInProgress) return;
                 var isEstimate = !document.getElementById('invoiceRadio').checked; // if invoice radio checked, isEstimate=false
                 // ensure discount defaults
                 var discountPerItem = parseFloat(document.getElementById('discountPerItem').value || '0') || 0;
@@ -1608,6 +1610,14 @@
                         if (!/^\d{10}$/.test(mobileStr)) { alert('Mobile number must contain only digits'); return; }
                     }
                 } catch (ve) { alert('Validation error'); return; }
+
+                // Lock the action after validation and before any asynchronous work.
+                // This prevents double-clicks from opening competing save transactions.
+                saveInProgress = true;
+                var saveButton = this;
+                saveButton.disabled = true;
+                saveButton.dataset.originalText = saveButton.textContent;
+                saveButton.textContent = 'Saving...';
 
                 // helper to build item DTOs from table rows
                 function buildItems() {
@@ -1768,13 +1778,21 @@
                                 try { document.getElementById('totalBillAmount').value = '0'; } catch (e) { }
 
                             } else {
+                                saveInProgress = false;
+                                saveButton.disabled = false;
+                                saveButton.textContent = saveButton.dataset.originalText || 'Save';
                                 var details = resp && Array.isArray(resp.errors) ? resp.errors : [];
                                 var message = (resp && resp.message) || 'Unable to save billing.';
                                 if (details.length) message += '\\n\\n' + details.join('\\n');
                                 alert('Error: ' + message);
                             }
                         })
-                        .catch(function() { alert('Error saving billing'); });
+                        .catch(function() {
+                            saveInProgress = false;
+                            saveButton.disabled = false;
+                            saveButton.textContent = saveButton.dataset.originalText || 'Save';
+                            alert('Error saving billing');
+                        });
                 }
 
                 // if customer id already present, use it

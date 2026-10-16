@@ -30,19 +30,25 @@
             }
             </tbody>
         </table>
-        <button type="submit" class="btn btn-primary">Create Split Invoice</button>
+        <button id="splitSubmit" type="submit" class="btn btn-primary">Create Split Invoice</button>
         <a class="btn btn-secondary" href="@Url.Action("ViewBills", "Home")">Cancel</a>
     </form>
 </div>
 @section Scripts {
 <script>
+let splitInProgress = false;
 document.getElementById('splitForm').addEventListener('submit', function (e) {
     e.preventDefault();
+    if (splitInProgress) return;
     const ids = Array.from(document.querySelectorAll('.split-item:checked')).map(x => x.value);
     if (!ids.length) { alert('Select at least one item.'); return; }
     for (const field of [['ownerName', 'Owner / Driver Name'], ['vehicleNo', 'Vehicle No'], ['eWayBillNo', 'E-Way Bill No']]) {
         if (!document.getElementById(field[0]).value.trim()) { alert(field[1] + ' is required.'); document.getElementById(field[0]).focus(); return; }
     }
+    splitInProgress = true;
+    const submitButton = document.getElementById('splitSubmit');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Splitting...';
     const body = new URLSearchParams();
     body.set('invoiceId', document.getElementById('invoiceId').value);
     body.set('invoiceNo', document.getElementById('invoiceNo').value);
@@ -53,12 +59,23 @@ document.getElementById('splitForm').addEventListener('submit', function (e) {
     body.set('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
     fetch('@Url.Action("SplitInvoice", "Billing")', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body })
       .then(r => r.json()).then(r => {
-          if (!r.success) { alert(r.message || 'Unable to split invoice.'); return; }
+          if (!r.success) {
+              splitInProgress = false;
+              submitButton.disabled = false;
+              submitButton.textContent = 'Create Split Invoice';
+              alert(r.message || 'Unable to split invoice.');
+              return;
+          }
           if (r.previewUrl) window.open(r.previewUrl, '_blank');
           alert('Created invoice ' + r.invoiceNo);
           window.location.href = '@Url.Action("ViewBills", "Home")';
       })
-      .catch(() => alert('Unable to split invoice.'));
+      .catch(() => {
+          splitInProgress = false;
+          submitButton.disabled = false;
+          submitButton.textContent = 'Create Split Invoice';
+          alert('Unable to split invoice.');
+      });
 });
 </script>
 }
