@@ -1564,11 +1564,15 @@ namespace WebApp.Controllers
                         }
 
                         // Additionally validate that the referenced bill exists
-                        var linkedBill = _context.FwBills.AsNoTracking().FirstOrDefault(b => b.BillId == request.BillId.Value);
+                        // Load the originating estimate as a tracked entity so its status is
+                        // persisted when this request converts it to an invoice.
+                        var linkedBill = _context.FwBills.FirstOrDefault(b => b.BillId == request.BillId.Value);
                         if (linkedBill == null)
                         {
                             return Json(new { success = false, message = "Referenced estimate (Bill) not found. Cannot generate invoice without a valid estimate." });
                         }
+
+                        linkedBill.IsEstimateInvoice = "I";
 
                         var billItems = _context.FwBillsItems
                             .AsNoTracking()
