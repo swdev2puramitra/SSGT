@@ -324,7 +324,7 @@ public partial class SsgtContext : DbContext
 
             entity.ToTable("FW_Invoice");
 
-            entity.Property(e => e.InvoiceId).ValueGeneratedNever();
+            entity.Property(e => e.InvoiceId).ValueGeneratedOnAdd();
             entity.Property(e => e.AmountPaid).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.BalanceAmount).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.BillAmount).HasColumnType("decimal(10, 2)");

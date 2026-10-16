@@ -1439,13 +1439,6 @@ namespace WebApp.Controllers
                             // No invoice exists yet for this bill - create a new invoice record linked to the bill
                             var (_, seq) = GenerateDocumentNumber(_context, request.IsEstimate);
                             var generatedInvoiceNo = "E" + seq.ToString("D4");
-                            // InvoiceId is a manually generated legacy key. Count()+1 can
-                            // reuse an id after a deletion, so derive it from the current
-                            // maximum while the serializable transaction is active.
-                            var newInvoiceId = (_context.FwInvoices
-                                .Select(i => (long?)i.InvoiceId)
-                                .Max() ?? 0L) + 1L;
-
                             int linkedBillId = request.BillId ?? 0;
                             string billNoToUse = request.InvoiceNo;
                             int invoiceCustomerId = resolvedCustomerId;
@@ -1463,7 +1456,6 @@ namespace WebApp.Controllers
 
                             invEntity = new FwInvoice
                             {
-                                InvoiceId = newInvoiceId,
                                 BillId = linkedBillId,
                                 BillNo = billNoToUse,
                                 CustomerId = invoiceCustomerId,
