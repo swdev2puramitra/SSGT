@@ -27,6 +27,8 @@ public partial class SsgtContext : DbContext
 
     public virtual DbSet<FwInvoiceItem> FwInvoiceItems { get; set; }
 
+    public virtual DbSet<FwInvoiceSplitHistory> FwInvoiceSplitHistories { get; set; }
+
     public virtual DbSet<FwInvoiceRemoved> FwInvoiceRemoveds { get; set; }
 
     public virtual DbSet<FwInvoiceRemovedItem> FwInvoiceRemovedItems { get; set; }
@@ -440,6 +442,27 @@ public partial class SsgtContext : DbContext
                 .HasForeignKey(d => d.ItemTypeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_FW_Invoice_Items_FW_Master_ItemType");
+        });
+
+        modelBuilder.Entity<FwInvoiceSplitHistory>(entity =>
+        {
+            entity.HasKey(e => e.SplitHistoryId);
+            entity.ToTable("FW_Invoice_Split_History");
+            entity.Property(e => e.SplitHistoryId).ValueGeneratedOnAdd();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.HasIndex(e => e.SourceInvoiceId).IsUnique();
+            entity.HasIndex(e => e.SplitInvoiceId).IsUnique();
+            entity.HasIndex(e => e.BillId);
+            entity.HasOne<FwInvoice>()
+                .WithMany()
+                .HasForeignKey(e => e.SourceInvoiceId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_FW_Invoice_Split_History_Source");
+            entity.HasOne<FwInvoice>()
+                .WithMany()
+                .HasForeignKey(e => e.SplitInvoiceId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_FW_Invoice_Split_History_Split");
         });
 
         modelBuilder.Entity<FwInvoiceRemoved>(entity =>

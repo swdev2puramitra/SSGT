@@ -56,7 +56,9 @@ namespace WebApp.Controllers
                 if (source == null) return Json(new { success = false, message = "Invoice not found." });
                 var invoiceCountForBill = await _context.FwInvoices
                     .CountAsync(x => x.BillId == source.BillId && x.IsEstimateInvoice == "I");
-                if (invoiceCountForBill > 1)
+                var priorSplit = await _context.FwInvoiceSplitHistories
+                    .AnyAsync(x => x.SourceInvoiceId == source.InvoiceId || x.SplitInvoiceId == source.InvoiceId);
+                if (invoiceCountForBill > 1 || priorSplit)
                     return Json(new { success = false, message = "This bill has already been split and cannot be split again." });
                 var selected = source.FwInvoiceItems.Where(x => selectedIds.Contains(x.ItemId)).ToList();
                 if (selected.Count == 0 || selected.Count == source.FwInvoiceItems.Count)
@@ -110,6 +112,14 @@ namespace WebApp.Controllers
                 source.BalanceAmount = Math.Round(source.TotalBillAmount.Value - sourcePayment, 2, MidpointRounding.AwayFromZero);
                 split.AmountPaid = splitPayment;
                 split.BalanceAmount = Math.Round(split.TotalBillAmount.Value - splitPayment, 2, MidpointRounding.AwayFromZero);
+                _context.FwInvoiceSplitHistories.Add(new FwInvoiceSplitHistory
+                {
+                    BillId = source.BillId,
+                    SourceInvoiceId = source.InvoiceId,
+                    SplitInvoiceId = split.InvoiceId,
+                    CreatedBy = currentUserId,
+                    CreatedDate = DateTime.Now
+                });
                 await _context.SaveChangesAsync(); await tx.CommitAsync();
                 var splitTemplate = split.IsInState == false ? "InvoiceOutOfState" : "InvoiceInState";
                 var splitPreviewUrl = Url.Action("PreviewPdf", "Billing", new { billId = split.InvoiceId, invoiceNo = split.InvoiceNo, template = splitTemplate }, Request.Scheme, Request.Host.Value);
