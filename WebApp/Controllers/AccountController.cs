@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Text.Json;
@@ -35,29 +34,10 @@ namespace WebApp.Controllers
 
                 if (user != null)
                 {
-                    var hasher = new PasswordHasher<FwUserDetail>();
-
-                    // If PasswordHash is empty, migrate from SHA-256
-                    if (string.IsNullOrEmpty(user.PasswordHash))
-                    {
-                        // Verify old SHA-256
-                        if (user.UserPassword == model.UserPassword)
-                        {
-                            // Rehash with bcrypt/PBKDF2
-                            user.PasswordHash = hasher.HashPassword(user, model.UserPassword);
-                            _context.SaveChanges();
-                        }
-                        else
-                        {
-                            ViewBag.Error = "Invalid user name or password";
-                            return View("Login", model);
-                        }
-                    }
-
-                    // Verify against new bcrypt/PBKDF2 hash
-                    var result = hasher.VerifyHashedPassword(user, user.PasswordHash, model.UserPassword);
-
-                    if (result == PasswordVerificationResult.Success)
+                    // The deployed FW_User_Details schema stores the client-side
+                    // SHA-256 value in UserPassword. Keep authentication aligned
+                    // with that schema; PasswordHash is not present in legacy DBs.
+                    if (user.UserPassword == model.UserPassword)
                     {
                         var claims = new List<Claim>
                         {

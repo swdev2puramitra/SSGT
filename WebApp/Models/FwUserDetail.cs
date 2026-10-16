@@ -18,8 +18,6 @@ public partial class FwUserDetail
 
     public bool? IsActive { get; set; }
 
-    public string? PasswordHash { get; set; }
-
     public virtual ICollection<FwBill> FwBills { get; set; } = new List<FwBill>();
 
     public virtual ICollection<FwInvoice> FwInvoices { get; set; } = new List<FwInvoice>();

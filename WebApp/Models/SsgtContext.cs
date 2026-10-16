@@ -868,7 +868,6 @@ public partial class SsgtContext : DbContext
             entity.Property(e => e.CreatedDate)
                 .HasDefaultValueSql("(getdate())", "DF_FW_User_Details_CreatedDate")
                 .HasColumnType("datetime");
-            entity.Property(e => e.PasswordHash).HasMaxLength(200);
             entity.Property(e => e.RoleId).HasColumnName("RoleID");
             entity.Property(e => e.UserName)
                 .HasMaxLength(50)
