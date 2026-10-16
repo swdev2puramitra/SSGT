@@ -69,7 +69,10 @@
                     item.ItemId,
                     item.GodownId,
                     item.AllocatedQty,
-                    item.DispatchQty,
+                    // DispatchQty from the allocation procedure represents an
+                    // already-recorded dispatch. Show the editable field blank on
+                    // initial load so it is not subtracted twice from RemainingQty.
+                    DispatchQty = (int?)null,
                     item.RemainingQty,
                     item.TotalDispatchedQty,
                     item.IsPacked
