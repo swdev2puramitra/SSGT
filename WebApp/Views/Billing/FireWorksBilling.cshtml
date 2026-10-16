@@ -218,6 +218,7 @@
                     </div>
 
                     <input type="hidden" id="billId" value="" />
+                    <input type="hidden" id="invoiceId" value="" />
                 </div>
             </div>
         </div>
@@ -392,6 +393,7 @@
                 try {
                     // set header fields
                     try { document.getElementById('billId').value = (serverEditPayload.header && serverEditPayload.header.billId) ? serverEditPayload.header.billId : '0'; } catch (e) { }
+                    try { document.getElementById('invoiceId').value = (serverEditPayload.header && serverEditPayload.header.invoiceId) ? serverEditPayload.header.invoiceId : ''; } catch (e) { }
                     try { document.getElementById('customerName').value = serverEditPayload.header.name || ''; } catch (e) { }
                     try { document.getElementById('address').value = serverEditPayload.header.custAddress || ''; } catch (e) { }
                     try { document.getElementById('mobile').value = serverEditPayload.header.mobileNo || ''; } catch (e) { }
@@ -1661,6 +1663,7 @@
 
                     var payload = {
                         BillId: parseInt(document.getElementById('billId').value || '0'),
+                        InvoiceId: parseInt(document.getElementById('invoiceId').value || '0') || null,
                         MobileNo: mobileVal,
                         Mobile2: mobile2Val,
                         //CustomerId: customerIdToUse || 0,

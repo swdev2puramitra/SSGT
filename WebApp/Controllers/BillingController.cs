@@ -805,6 +805,7 @@ namespace WebApp.Controllers
                         var header = new
                         {
                             billId = invoice.BillId,
+                            invoiceId = invoice.InvoiceId,
                             billNo = invoice.BillNo,
                             customerId = invoice.CustomerId,
                             name = _context.FwMasterCustomers.AsNoTracking().Where(c => c.CustomerId == invoice.CustomerId).Select(c => c.Name).FirstOrDefault(),
@@ -1515,15 +1516,20 @@ namespace WebApp.Controllers
                             return Json(new { success = false, message = "All items must be dispatched/loaded before converting the estimate to an invoice." });
                         }
 
-                        // Determine whether an invoice already exists for this bill before making changes.
-                        var existingInvoiceForBill = _context.FwInvoices.AsNoTracking().FirstOrDefault(i => i.BillId == request.BillId.Value);
+                        // Target an explicitly requested invoice when editing a split invoice.
+                        // Fall back to the bill for estimate conversion and legacy callers.
+                        var existingInvoiceForBill = request.InvoiceId.HasValue
+                            ? _context.FwInvoices.AsNoTracking().FirstOrDefault(i => i.InvoiceId == request.InvoiceId.Value)
+                            : _context.FwInvoices.AsNoTracking().FirstOrDefault(i => i.BillId == request.BillId.Value);
                         bool invoiceExisted = existingInvoiceForBill != null;
 
                         FwInvoice invEntity = null;
                         if (invoiceExisted)
                         {
                             // Load the existing invoice for update
-                            invEntity = _context.FwInvoices.FirstOrDefault(i => i.BillId == request.BillId.Value);
+                            invEntity = request.InvoiceId.HasValue
+                                ? _context.FwInvoices.FirstOrDefault(i => i.InvoiceId == request.InvoiceId.Value)
+                                : _context.FwInvoices.FirstOrDefault(i => i.BillId == request.BillId.Value);
                         }
                         else
                         {
@@ -1737,16 +1743,16 @@ namespace WebApp.Controllers
 
                         // Return InvoiceId and provide preview + redirect URLs so client can open PDF in a new tab and navigate to ViewBills
                         var chosenTemplate = request.IsInState.HasValue && !request.IsInState.Value ? "InvoiceOutOfState" : "InvoiceInState";
-                        var previewUrl = Url.Action("PreviewPdf", "Billing", new { billId = invEntity.BillId, template = chosenTemplate }, Request.Scheme, Request.Host.Value);
+                        var previewUrl = Url.Action("PreviewPdf", "Billing", new { billId = invEntity.InvoiceId, invoiceNo = invEntity.InvoiceNo, template = chosenTemplate }, Request.Scheme, Request.Host.Value);
                         var redirect = Url.Action("ViewBills", "Home");
                         // If we created a new invoice record for this bill, do not redirect the current window; only provide previewUrl.
                         if (!invoiceExisted)
                         {
-                            return Json(new { success = true, message = "Saved", billId = invEntity.InvoiceId, previewUrl = previewUrl });
+                            return Json(new { success = true, message = "Saved", billId = invEntity.InvoiceId, invoiceId = invEntity.InvoiceId, previewUrl = previewUrl });
                         }
 
                         // Existing invoice edited -> provide redirect so client navigates to ViewBills after opening preview.
-                        return Json(new { success = true, message = "Saved", billId = invEntity.InvoiceId, previewUrl = previewUrl, redirectUrl = redirect });
+                        return Json(new { success = true, message = "Saved", billId = invEntity.InvoiceId, invoiceId = invEntity.InvoiceId, previewUrl = previewUrl, redirectUrl = redirect });
                     }
                 }
             }

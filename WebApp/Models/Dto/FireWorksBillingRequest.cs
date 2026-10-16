@@ -38,6 +38,7 @@ namespace WebApp.Models.Dto
     public class FireWorksBillingRequest
     {
         public int? BillId { get; set; }
+        public long? InvoiceId { get; set; }
         // CustomerId set by client when existing customer is selected/created
         public int? CustomerId { get; set; }
         public int CustomerType { get; set; } = 1;

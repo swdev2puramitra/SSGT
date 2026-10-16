@@ -402,6 +402,15 @@ public partial class SsgtContext : DbContext
 
             entity.ToTable("FW_Invoice_Items");
 
+            // InvoiceId is the invoice-item foreign key and must be mapped explicitly.
+            // This keeps EF's relationship fixup/tracking stable when an invoice is edited
+            // and its item rows are replaced.
+            entity.HasOne(d => d.Invoice)
+                .WithMany(p => p.FwInvoiceItems)
+                .HasForeignKey(d => d.InvoiceId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_FW_Invoice_Items_FW_Invoice");
+
             entity.Property(e => e.Cgst)
                 .HasColumnType("decimal(6, 2)")
                 .HasColumnName("CGST");
