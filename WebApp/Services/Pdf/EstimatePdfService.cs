@@ -136,9 +136,9 @@ namespace WebApp.Services.Pdf
                                 table.Cell().Element(PdfServiceShared.TableCellStyle).Text(it.SlNo.ToString());
                                 table.Cell().Element(PdfServiceShared.TableCellStyle).Text(it.CompanyName);
                                 table.Cell().Element(PdfServiceShared.TableCellStyle).Text(it.ItemName);
-                                var quantityText = string.IsNullOrWhiteSpace(it.OriginalEntry)
-                                    ? it.NormalizedQuantity.ToString("0.##")
-                                    : $"{it.OriginalEntry} -> {it.NormalizedQuantity:0.##}";
+                                // Estimates display the numeric quantity only. The unit
+                                // is already shown separately in the Per column.
+                                var quantityText = it.NormalizedQuantity.ToString("0.##");
                                 table.Cell().Element(PdfServiceShared.TableCellStyle).AlignRight().Text(quantityText);
                                 table.Cell().Element(PdfServiceShared.TableCellStyle).Text(it.TypeName ?? string.Empty);
                                 table.Cell().Element(PdfServiceShared.TableCellStyle).AlignRight().Text(it.Rate.ToString("0.00"));
