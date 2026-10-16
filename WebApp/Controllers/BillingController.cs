@@ -1278,8 +1278,18 @@ namespace WebApp.Controllers
                             var itemEntity = isEdit
                                 ? billEntity.FwBillsItems.FirstOrDefault(x => x.ItemId == it.ItemId && x.ItemTypeId == (it.ItemTypeId ?? 0))
                                 : null;
+                            // Reuse an entity already tracked by this DbContext. This
+                            // prevents composite-key collisions when an edit loads the
+                            // bill graph and the same row is encountered again.
+                            itemEntity ??= _context.ChangeTracker.Entries<FwBillsItem>()
+                                .Select(e => e.Entity)
+                                .FirstOrDefault(x => x.BillId == billEntity.BillId && x.ItemId == it.ItemId);
                             var isExistingItem = itemEntity != null;
-                            itemEntity ??= new FwBillsItem { BillId = billEntity.BillId };
+                            if (itemEntity == null)
+                            {
+                                itemEntity = new FwBillsItem { BillId = billEntity.BillId };
+                                _context.FwBillsItems.Add(itemEntity);
+                            }
                             itemEntity.ItemId = it.ItemId;
                             itemEntity.ItemTypeId = it.ItemTypeId ?? 0;
                             itemEntity.Quantity = normalizedQty;
@@ -1304,7 +1314,6 @@ namespace WebApp.Controllers
                             else
                             {
                                 _context.Entry(itemEntity).State = EntityState.Added;
-                                _context.FwBillsItems.Add(itemEntity);
                             }
                         }
 
