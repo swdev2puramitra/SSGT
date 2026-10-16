@@ -40,7 +40,8 @@ namespace WebApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SplitInvoice(long invoiceId, string itemIds, string? invoiceNo = null)
+        public async Task<IActionResult> SplitInvoice(long invoiceId, string itemIds, string? invoiceNo = null,
+            string? ownerName = null, string? vehicleNo = null, string? eWayBillNo = null)
         {
             var selectedIds = (itemIds ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(x => int.TryParse(x, out var id) ? id : 0).Where(x => x > 0).Distinct().ToList();
@@ -56,13 +57,17 @@ namespace WebApp.Controllers
                     return Json(new { success = false, message = "Select some, but not all, invoice items to split." });
 
                 var currentUserId = int.TryParse(User.FindFirst("UserId")?.Value, out var uid) ? uid : 0;
-                var (splitInvoiceNo, _) = GenerateDocumentNumber(_context, false);
+                var (_, splitSequence) = GenerateDocumentNumber(_context, false);
+                var splitInvoiceNo = "E" + splitSequence.ToString("D4");
                 var split = new FwInvoice { BillId = source.BillId, BillNo = source.BillNo, CustomerId = source.CustomerId,
                     CustomerType = source.CustomerType, IsEstimateInvoice = "I", InvoiceNo = splitInvoiceNo,
                     CreatedBy = currentUserId, CreatedDate = DateTime.Now, IsInState = source.IsInState,
-                    CustGstin = source.CustGstin, WayBill = source.WayBill, VehicleNo = source.VehicleNo,
-                    OwnerName = source.OwnerName, Pos = source.Pos, StateCode = source.StateCode,
+                    CustGstin = source.CustGstin,
+                    VehicleNo = string.IsNullOrWhiteSpace(vehicleNo) ? source.VehicleNo : vehicleNo.Trim(),
+                    OwnerName = string.IsNullOrWhiteSpace(ownerName) ? source.OwnerName : ownerName.Trim(),
+                    Pos = source.Pos, StateCode = source.StateCode,
                     Pincode = source.Pincode, Loc = source.Loc, Invoice = source.Invoice,
+                    WayBill = string.IsNullOrWhiteSpace(eWayBillNo) ? source.WayBill : eWayBillNo.Trim(),
                     DiscountPerItem = source.DiscountPerItem, DiscountPercentage = source.DiscountPercentage, AmountPaid = 0m };
                 _context.FwInvoices.Add(split);
                 await _context.SaveChangesAsync();

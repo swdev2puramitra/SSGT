@@ -11,6 +11,11 @@
         @Html.AntiForgeryToken()
         <input type="hidden" id="invoiceId" value="@invoice.InvoiceId" />
         <input type="hidden" id="invoiceNo" value="@invoice.InvoiceNo" />
+        <div class="row g-3 mb-3">
+            <div class="col-md-4"><label class="form-label">Owner / Driver Name</label><input class="form-control" id="ownerName" value="@invoice.OwnerName" /></div>
+            <div class="col-md-4"><label class="form-label">Vehicle No</label><input class="form-control" id="vehicleNo" value="@invoice.VehicleNo" /></div>
+            <div class="col-md-4"><label class="form-label">E-Way Bill No</label><input class="form-control" id="eWayBillNo" value="@invoice.WayBill" /></div>
+        </div>
         <table class="table table-dark table-striped">
             <thead><tr><th>Select</th><th>Item</th><th>Quantity</th><th>Total</th></tr></thead>
             <tbody>
@@ -38,6 +43,9 @@ document.getElementById('splitForm').addEventListener('submit', function (e) {
     const body = new URLSearchParams();
     body.set('invoiceId', document.getElementById('invoiceId').value);
     body.set('invoiceNo', document.getElementById('invoiceNo').value);
+    body.set('ownerName', document.getElementById('ownerName').value);
+    body.set('vehicleNo', document.getElementById('vehicleNo').value);
+    body.set('eWayBillNo', document.getElementById('eWayBillNo').value);
     body.set('itemIds', ids.join(','));
     body.set('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
     fetch('@Url.Action("SplitInvoice", "Billing")', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body })
