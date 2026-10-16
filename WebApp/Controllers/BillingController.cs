@@ -26,6 +26,74 @@ namespace WebApp.Controllers
             _quantityConversionHelper = quantityConversionHelper;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> SplitInvoice(long invoiceId, string? invoiceNo = null)
+        {
+            var invoice = await _context.FwInvoices.AsNoTracking()
+                .Include(x => x.FwInvoiceItems).ThenInclude(x => x.Item)
+                .Include(x => x.FwInvoiceItems).ThenInclude(x => x.ItemType)
+                .FirstOrDefaultAsync(x => (x.InvoiceId == invoiceId || (invoiceNo != null && x.InvoiceNo == invoiceNo)) && x.IsEstimateInvoice == "I");
+            if (invoice == null) return NotFound("Invoice not found.");
+            ViewBag.Invoice = invoice;
+            return View(invoice.FwInvoiceItems.OrderBy(x => x.SlNo).ToList());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SplitInvoice(long invoiceId, string itemIds, string? invoiceNo = null)
+        {
+            var selectedIds = (itemIds ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => int.TryParse(x, out var id) ? id : 0).Where(x => x > 0).Distinct().ToList();
+            if (selectedIds.Count == 0) return Json(new { success = false, message = "Select at least one invoice item." });
+            await using var tx = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            try
+            {
+                var source = await _context.FwInvoices.Include(x => x.FwInvoiceItems)
+                    .FirstOrDefaultAsync(x => (x.InvoiceId == invoiceId || (invoiceNo != null && x.InvoiceNo == invoiceNo)) && x.IsEstimateInvoice == "I");
+                if (source == null) return Json(new { success = false, message = "Invoice not found." });
+                var selected = source.FwInvoiceItems.Where(x => selectedIds.Contains(x.ItemId)).ToList();
+                if (selected.Count == 0 || selected.Count == source.FwInvoiceItems.Count)
+                    return Json(new { success = false, message = "Select some, but not all, invoice items to split." });
+
+                var currentUserId = int.TryParse(User.FindFirst("UserId")?.Value, out var uid) ? uid : 0;
+                var (splitInvoiceNo, _) = GenerateDocumentNumber(_context, false);
+                var split = new FwInvoice { BillId = source.BillId, BillNo = source.BillNo, CustomerId = source.CustomerId,
+                    CustomerType = source.CustomerType, IsEstimateInvoice = "I", InvoiceNo = splitInvoiceNo,
+                    CreatedBy = currentUserId, CreatedDate = DateTime.Now, IsInState = source.IsInState,
+                    CustGstin = source.CustGstin, WayBill = source.WayBill, VehicleNo = source.VehicleNo,
+                    OwnerName = source.OwnerName, Pos = source.Pos, StateCode = source.StateCode,
+                    Pincode = source.Pincode, Loc = source.Loc, Invoice = source.Invoice,
+                    DiscountPerItem = source.DiscountPerItem, DiscountPercentage = source.DiscountPercentage, AmountPaid = 0m };
+                _context.FwInvoices.Add(split);
+                await _context.SaveChangesAsync();
+                foreach (var item in selected)
+                {
+                    _context.FwInvoiceItems.Add(new FwInvoiceItem { InvoiceId = split.InvoiceId, BillId = source.BillId,
+                        ItemId = item.ItemId, ItemTypeId = item.ItemTypeId, Quantity = item.Quantity, ItemCost = item.ItemCost,
+                        TotalCost = item.TotalCost, Cgst = item.Cgst, Sgst = item.Sgst, Igst = item.Igst, SlNo = item.SlNo,
+                        ChangedPrice = item.ChangedPrice, SellType = item.SellType, SellQty = item.SellQty,
+                        OriginalCost = item.OriginalCost, IsPriceModified = item.IsPriceModified });
+                    _context.FwInvoiceItems.Remove(item);
+                }
+                static decimal Tax(FwInvoiceItem x, decimal? rate) => Math.Round(x.TotalCost * (rate ?? 0m) / 100m, 2, MidpointRounding.AwayFromZero);
+                var remaining = source.FwInvoiceItems.Except(selected).ToList();
+                var splitBase = selected.Sum(x => x.TotalCost); var remainingBase = remaining.Sum(x => x.TotalCost);
+                var splitTax = selected.Sum(x => Tax(x, x.Cgst) + Tax(x, x.Sgst) + Tax(x, x.Igst));
+                var remainingTax = remaining.Sum(x => Tax(x, x.Cgst) + Tax(x, x.Sgst) + Tax(x, x.Igst));
+                split.BillAmount = splitBase; split.TotalBillAmount = splitBase + splitTax; split.BalanceAmount = split.TotalBillAmount;
+                source.BillAmount = remainingBase; source.TotalBillAmount = remainingBase + remainingTax;
+                source.AmountPaid = Math.Min(source.AmountPaid ?? 0m, source.TotalBillAmount.Value); source.BalanceAmount = source.TotalBillAmount - source.AmountPaid;
+                await _context.SaveChangesAsync(); await tx.CommitAsync();
+                return Json(new { success = true, invoiceId = split.InvoiceId, invoiceNo = split.InvoiceNo });
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                await _errorLogService.LogErrorAsync(User.FindFirst("UserId")?.Value ?? "Unknown", "BillingController.SplitInvoice", $"InvoiceId={invoiceId}", ex);
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
         // GET: /Billing/PreviewPdf?billId=123&template=InvoiceInState
         [HttpGet]
         // Default to Estimate template for previews when not specified

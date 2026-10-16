@@ -166,6 +166,11 @@
                         buttons += '<button class="btn btn-sm ' + (isDispatched ? 'btn-dispatch-completed' : 'btn-primary') + ' action-dispatch" data-billid="' + id + '" title="' + (isDispatched ? 'Open packing dashboard' : 'Dispatch bill') + '"><i class="fa-solid fa-truck-fast"></i></button>';
                     }
                     buttons += '<button class="btn btn-sm btn-secondary action-print" data-billid="' + id + '"><i class="fas fa-print"></i></button>';
+                    var estimateValue = (data.estimate || data.Estimate || '') + '';
+                    var isInvoiceRow = estimateValue.toLowerCase() === 'no' || estimateValue.toLowerCase() === 'invoice' || !!data.invoiceNo;
+                    if (isInvoiceRow && data.invoiceNo) {
+                        buttons += '<button class="btn btn-sm btn-warning action-split" data-invoiceid="' + (data.invoiceId || id) + '" data-invoiceno="' + (data.invoiceNo || '') + '" title="Split invoice by items"><i class="fas fa-code-branch"></i></button>';
+                    }
                     buttons += '</div>';
                     return buttons;
                 } }
@@ -217,6 +222,11 @@
                         } else {
                             alert('Access denied: only administrators can edit bills.');
                         }
+                        return;
+                    }
+
+                    if(t.classList.contains('action-split')){
+                        window.location.href = '/Billing/SplitInvoice?invoiceId=' + encodeURIComponent(t.getAttribute('data-invoiceid')) + '&invoiceNo=' + encodeURIComponent(t.getAttribute('data-invoiceno') || '');
                         return;
                     }
 

@@ -320,7 +320,8 @@ public partial class SsgtContext : DbContext
         {
             // Invoice primary key is InvoiceId (not BillId)
             entity.HasKey(e => e.InvoiceId);
-            entity.HasIndex(e => e.BillId).IsUnique();
+            // An estimate may be split into multiple invoices by item group.
+            entity.HasIndex(e => e.BillId).IsUnique(false);
 
             entity.ToTable("FW_Invoice");
 
@@ -397,7 +398,7 @@ public partial class SsgtContext : DbContext
 
         modelBuilder.Entity<FwInvoiceItem>(entity =>
         {
-            entity.HasKey(e => new { e.BillId, e.ItemId });
+            entity.HasKey(e => new { e.InvoiceId, e.ItemId });
 
             entity.ToTable("FW_Invoice_Items");
 
