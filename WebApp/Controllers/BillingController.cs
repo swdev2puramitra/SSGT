@@ -1316,8 +1316,15 @@ namespace WebApp.Controllers
 
                         if (isEdit)
                         {
+                            // Remove only rows that are absent from the submitted item
+                            // keys. Comparing entity instances can incorrectly classify
+                            // a requested row as stale after EF attaches/reloads it.
+                            var requestedItemKeys = new HashSet<(int ItemId, int ItemTypeId)>(
+                                (request.Items ?? new System.Collections.Generic.List<WebApp.Models.Dto.FireWorksBillingItemDto>())
+                                    .Where(x => x != null && x.ItemId > 0 && x.Quantity > 0)
+                                    .Select(x => (x.ItemId, x.ItemTypeId ?? 0)));
                             var staleItems = billEntity.FwBillsItems
-                                .Where(x => x.IsPacked != true && !updatedExistingItems.Contains(x))
+                                .Where(x => x.IsPacked != true && !requestedItemKeys.Contains((x.ItemId, x.ItemTypeId)))
                                 .ToList();
                             if (staleItems.Count > 0)
                                 _context.FwBillsItems.RemoveRange(staleItems);
