@@ -157,7 +157,7 @@
                     var id = data.billId || '';
                     var buttons = '<div class="d-flex gap-1 justify-content-center">';
                     if(window.CURRENT_USER_ROLE === 1){
-                        buttons += '<button class="btn btn-sm btn-info action-edit" data-billid="' + id + '"><i class="fas fa-edit"></i></button>';
+                        buttons += '<button class="btn btn-sm btn-info action-edit" data-billid="' + id + '" data-invoiceno="' + (data.invoiceNo || '') + '"><i class="fas fa-edit"></i></button>';
                     }
                     // Admins can reopen the packing dashboard after dispatch; use an alternate color.
                     var dispatchStatus = (data.DispatchStatus || data.dispatchStatus || '') + '';
@@ -165,7 +165,7 @@
                     if(window.CURRENT_USER_ROLE === 1 || window.CURRENT_USER_ROLE === 2 || !dispatchStatus || (dispatchStatus !== 'D' && dispatchStatus !== 'C' && dispatchStatus !== 'P')){
                         buttons += '<button class="btn btn-sm ' + (isDispatched ? 'btn-dispatch-completed' : 'btn-primary') + ' action-dispatch" data-billid="' + id + '" title="' + (isDispatched ? 'Open packing dashboard' : 'Dispatch bill') + '"><i class="fa-solid fa-truck-fast"></i></button>';
                     }
-                    buttons += '<button class="btn btn-sm btn-secondary action-print" data-billid="' + id + '"><i class="fas fa-print"></i></button>';
+                    buttons += '<button class="btn btn-sm btn-secondary action-print" data-billid="' + id + '" data-invoiceno="' + (data.invoiceNo || '') + '"><i class="fas fa-print"></i></button>';
                     var estimateValue = (data.estimate || data.Estimate || '') + '';
                     var isInvoiceRow = estimateValue.toLowerCase() === 'no' || estimateValue.toLowerCase() === 'invoice' || !!data.invoiceNo;
                     if (isInvoiceRow && data.invoiceNo) {
@@ -218,7 +218,7 @@
                     if(t.classList.contains('action-edit')){
                         var userRole = window.CURRENT_USER_ROLE || 0;
                         if(userRole === 1){
-                            var invoiceQuery = data.invoiceNo ? '&invoiceNo=' + encodeURIComponent(data.invoiceNo) : '';
+                            var invoiceQuery = t.getAttribute('data-invoiceno') ? '&invoiceNo=' + encodeURIComponent(t.getAttribute('data-invoiceno')) : '';
                             window.location.href = '/Billing/FireWorksBilling?billId=' + encodeURIComponent(bid) + invoiceQuery;
                         } else {
                             alert('Access denied: only administrators can edit bills.');
@@ -338,7 +338,8 @@
                             else if(isRetail) tmpl = 'RetailThermal';
                             else tmpl = inStateFlag ? 'InvoiceInState' : 'InvoiceOutOfState';
                         }catch(e){ tmpl = 'Estimate'; }
-                        var url = '/Billing/PreviewPdf?billId=' + encodeURIComponent(bid) + '&template=' + encodeURIComponent(tmpl);
+                        var invoiceQuery = t.getAttribute('data-invoiceno') ? '&invoiceNo=' + encodeURIComponent(t.getAttribute('data-invoiceno')) : '';
+                        var url = '/Billing/PreviewPdf?billId=' + encodeURIComponent(bid) + invoiceQuery + '&template=' + encodeURIComponent(tmpl);
                         try { window.open(url, '_blank'); } catch(e) { window.location.href = url; }
                     }
                 });

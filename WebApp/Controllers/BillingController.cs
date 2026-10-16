@@ -102,7 +102,7 @@ namespace WebApp.Controllers
         // GET: /Billing/PreviewPdf?billId=123&template=InvoiceInState
         [HttpGet]
         // Default to Estimate template for previews when not specified
-        public async System.Threading.Tasks.Task<IActionResult> PreviewPdf(long billId, string template = "Estimate")
+        public async System.Threading.Tasks.Task<IActionResult> PreviewPdf(long billId, string template = "Estimate", string? invoiceNo = null)
         {
             try
             {
@@ -129,7 +129,8 @@ namespace WebApp.Controllers
                     var inv = _context.FwInvoices.AsNoTracking()
                         .Include(i => i.FwInvoiceItems).ThenInclude(ii => ii.Item)
                         .Include(i => i.FwInvoiceItems).ThenInclude(ii => ii.ItemType)
-                        .FirstOrDefault(i => i.InvoiceId == billId || i.BillId == billId);
+                        .FirstOrDefault(i => (!string.IsNullOrWhiteSpace(invoiceNo) && i.InvoiceNo == invoiceNo) ||
+                                             (string.IsNullOrWhiteSpace(invoiceNo) && (i.InvoiceId == billId || i.BillId == billId)));
                     if (inv == null) return NotFound();
 
                     model.BillNo = inv.BillNo ?? inv.InvoiceNo ?? string.Empty;
