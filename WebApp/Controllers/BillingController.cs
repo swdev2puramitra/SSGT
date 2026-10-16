@@ -89,9 +89,23 @@ namespace WebApp.Controllers
                 var remainingBase = Math.Round(remaining.Sum(x => x.TotalCost) * (1m - discountPercent / 100m), 2);
                 var splitTax = selected.Sum(x => Tax(x, x.Cgst, discountPercent) + Tax(x, x.Sgst, discountPercent) + Tax(x, x.Igst, discountPercent));
                 var remainingTax = remaining.Sum(x => Tax(x, x.Cgst, discountPercent) + Tax(x, x.Sgst, discountPercent) + Tax(x, x.Igst, discountPercent));
-                split.BillAmount = splitBase; split.TotalBillAmount = splitBase + splitTax; split.BalanceAmount = split.TotalBillAmount;
+                split.BillAmount = splitBase; split.TotalBillAmount = splitBase + splitTax;
                 source.BillAmount = remainingBase; source.TotalBillAmount = remainingBase + remainingTax;
-                source.AmountPaid = Math.Min(source.AmountPaid ?? 0m, source.TotalBillAmount.Value); source.BalanceAmount = source.TotalBillAmount - source.AmountPaid;
+
+                // Keep the original payment allocation intact across both resulting invoices:
+                // the source invoice receives payment first up to its recalculated total, and
+                // any remainder is applied to the new split invoice.
+                var recordedPayment = Math.Max(source.AmountPaid ?? 0m, 0m);
+                var combinedTotal = Math.Round(source.TotalBillAmount.Value + split.TotalBillAmount.Value, 2, MidpointRounding.AwayFromZero);
+                if (recordedPayment > combinedTotal)
+                    return Json(new { success = false, message = "Recorded payment exceeds the combined totals of the invoices." });
+
+                var sourcePayment = Math.Round(Math.Min(recordedPayment, source.TotalBillAmount.Value), 2, MidpointRounding.AwayFromZero);
+                var splitPayment = Math.Round(Math.Min(Math.Max(recordedPayment - sourcePayment, 0m), split.TotalBillAmount.Value), 2, MidpointRounding.AwayFromZero);
+                source.AmountPaid = sourcePayment;
+                source.BalanceAmount = Math.Round(source.TotalBillAmount.Value - sourcePayment, 2, MidpointRounding.AwayFromZero);
+                split.AmountPaid = splitPayment;
+                split.BalanceAmount = Math.Round(split.TotalBillAmount.Value - splitPayment, 2, MidpointRounding.AwayFromZero);
                 await _context.SaveChangesAsync(); await tx.CommitAsync();
                 var splitTemplate = split.IsInState == false ? "InvoiceOutOfState" : "InvoiceInState";
                 var splitPreviewUrl = Url.Action("PreviewPdf", "Billing", new { billId = split.InvoiceId, invoiceNo = split.InvoiceNo, template = splitTemplate }, Request.Scheme, Request.Host.Value);
