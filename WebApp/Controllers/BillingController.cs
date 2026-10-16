@@ -54,6 +54,10 @@ namespace WebApp.Controllers
                 var source = await _context.FwInvoices.Include(x => x.FwInvoiceItems)
                     .FirstOrDefaultAsync(x => (x.InvoiceId == invoiceId || (invoiceNo != null && x.InvoiceNo == invoiceNo)) && x.IsEstimateInvoice == "I");
                 if (source == null) return Json(new { success = false, message = "Invoice not found." });
+                var invoiceCountForBill = await _context.FwInvoices
+                    .CountAsync(x => x.BillId == source.BillId && x.IsEstimateInvoice == "I");
+                if (invoiceCountForBill > 1)
+                    return Json(new { success = false, message = "This bill has already been split and cannot be split again." });
                 var selected = source.FwInvoiceItems.Where(x => selectedIds.Contains(x.ItemId)).ToList();
                 if (selected.Count == 0 || selected.Count == source.FwInvoiceItems.Count)
                     return Json(new { success = false, message = "Select some, but not all, invoice items to split." });
