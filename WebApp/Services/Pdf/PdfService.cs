@@ -309,7 +309,7 @@ namespace WebApp.Services.Pdf
                                             rr.RelativeColumn().Text("Invoice value").Bold().FontSize(10);
                                             rr.ConstantColumn(120).AlignRight().Text(x =>
                                             {
-                                                var invoiceValue = model.TotalAmount + (model.TaxSummaries != null ? model.TaxSummaries.Sum(x => x.TotalTax) : 0m);
+                                                var invoiceValue = model.InvoiceTotal ?? (model.TotalAmount + (model.TaxSummaries != null ? model.TaxSummaries.Sum(x => x.TotalTax) : 0m));
                                                 x.Span(invoiceValue.ToString("0.00")).Bold().FontSize(10);
                                             });
                                         });

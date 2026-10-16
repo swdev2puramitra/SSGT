@@ -23,6 +23,8 @@ namespace WebApp.Models.Pdf
         public string CustomerAddress { get; set; } = string.Empty;
         public bool IsInState { get; set; }
         public decimal TotalAmount { get; set; }
+        // Persisted tax-inclusive invoice total, when rendering an invoice.
+        public decimal? InvoiceTotal { get; set; }
         public decimal AmountPaid { get; set; }
         public decimal BalanceAmount { get; set; }
         public List<PdfBillItem> Items { get; set; } = new List<PdfBillItem>();

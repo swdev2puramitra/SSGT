@@ -231,9 +231,9 @@ namespace WebApp.Services.Pdf
                                     ? model.TaxSummaries.Sum(x => x.IgstAmount)
                                     : model.Items.Sum(x => x.IgstAmount);
 
-                                var invoiceValue = totalTaxable + totalIgst;
+                                var invoiceValue = model.InvoiceTotal ?? (totalTaxable + totalIgst);
                                 var amountPaid = model.AmountPaid;
-                                var balance = invoiceValue - amountPaid;
+                                var balance = model.BalanceAmount;
 
                                 right.Item().AlignRight().Row(rr =>
                                 {

@@ -170,10 +170,13 @@ namespace WebApp.Controllers
                     model.BillNo = inv.BillNo ?? inv.InvoiceNo ?? string.Empty;
                     model.BillDate = inv.CreatedDate;
                     model.IsInState = inv.IsInState ?? true;
-                    model.TotalAmount = (inv.TotalBillAmount ?? inv.BillAmount);
+                    // BillAmount is the persisted taxable base; TotalBillAmount is the
+                    // authoritative tax-inclusive invoice total used by both PDF layouts.
+                    model.TotalAmount = inv.BillAmount;
+                    model.InvoiceTotal = inv.TotalBillAmount;
                     // include amount paid (advance) and balance for PDF
                     model.AmountPaid = inv.AmountPaid ?? 0m;
-                    model.BalanceAmount = Convert.ToDecimal(inv.BalanceAmount);
+                    model.BalanceAmount = inv.BalanceAmount ?? Math.Round((inv.TotalBillAmount ?? inv.BillAmount) - (inv.AmountPaid ?? 0m), 2, MidpointRounding.AwayFromZero);
                     model.InvoiceNo = inv.InvoiceNo;
                     model.VehicleNo = inv.VehicleNo ?? string.Empty;
                     model.OwnerName = inv.OwnerName ?? string.Empty;
@@ -218,7 +221,7 @@ namespace WebApp.Controllers
                         .ToDictionary(g => g.Key, g => g.ToDictionary(x => x.ItemTypeId, x => x.QtyPerType));
 
                     // Prefer per-item DiscountPerItem if present: treat it as percentage per displayed type-unit (percent)
-                    var invDiscountPercent = inv.DiscountPerItem ?? 0m;
+                    var invDiscountPercent = inv.DiscountPercentage ?? inv.DiscountPerItem ?? 0m;
                     if (invDiscountPercent < 0m) invDiscountPercent = 0m;
                     if (invDiscountPercent > 100m) invDiscountPercent = 100m;
 
