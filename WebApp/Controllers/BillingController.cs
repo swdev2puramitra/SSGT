@@ -254,7 +254,7 @@ namespace WebApp.Controllers
                         // compute rate per displayed type-unit
                         var ratePerType = unitRatePerBase * qtyPerType;
 
-                        // apply percentage discount per type-unit (DiscountPerItem is percent)
+                        // Apply the invoice-level DiscountPercentage to the displayed rate.
                         var discountedRatePerType = ratePerType * (1 - (invDiscountPercent / 100m));
                         if (discountedRatePerType < 0m) discountedRatePerType = 0m;
 
@@ -329,10 +329,11 @@ namespace WebApp.Controllers
                                 ? $"{it.SellQty.Value} {it.ItemType?.TypeName ?? "Unit"}'s"
                                 : string.Empty,
                             Rate = Math.Round(unitRatePerBase, 2),
-                            // Keep Discount percent empty (0) because DiscountPerItem is absolute amount per item
-                            Discount = 0m,
+                            Discount = invDiscountPercent,
                             Taxable = taxable,
-                            GstPercent = cgstPercent + sgstPercent + igstPercent,
+                            // Show the applicable GST rate for the invoice's state:
+                            // CGST + SGST in-state, or IGST out-of-state.
+                            GstPercent = model.IsInState ? cgstPercent + sgstPercent : igstPercent,
                             Cgst = cgstPercent,
                             Sgst = sgstPercent,
                             Igst = igstPercent,
