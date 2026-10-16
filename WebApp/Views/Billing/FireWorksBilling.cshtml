@@ -1749,7 +1749,10 @@
                                 try { document.getElementById('totalBillAmount').value = '0'; } catch (e) { }
 
                             } else {
-                                alert('Error: ' + (resp && resp.message));
+                                var details = resp && Array.isArray(resp.errors) ? resp.errors : [];
+                                var message = (resp && resp.message) || 'Unable to save billing.';
+                                if (details.length) message += '\\n\\n' + details.join('\\n');
+                                alert('Error: ' + message);
                             }
                         })
                         .catch(function() { alert('Error saving billing'); });
