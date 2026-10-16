@@ -994,6 +994,11 @@ namespace WebApp.Controllers
                 CheckDecimalField(request.DiscountPercentage, "DiscountPercentage");
                 CheckDecimalField(request.AmountPaid, "AmountPaid");
 
+                if (request.DiscountPerItem.HasValue && request.DiscountPerItem.Value > 100m)
+                    validationErrors.Add("DiscountPerItem must be between 0 and 100.");
+                if (request.DiscountPercentage.HasValue && request.DiscountPercentage.Value > 100m)
+                    validationErrors.Add("DiscountPercentage must be between 0 and 100.");
+
                 // Validate each item: quantity numeric and positive; price-related fields decimals
                 if (request.Items != null)
                 {
@@ -1019,12 +1024,34 @@ namespace WebApp.Controllers
                         CheckDecimalField(itm.CgstAmount, $"Items[{i}].CgstAmount");
                         CheckDecimalField(itm.SgstAmount, $"Items[{i}].SgstAmount");
                         CheckDecimalField(itm.IgstAmount, $"Items[{i}].IgstAmount");
+                        CheckDecimalField(itm.CgstPercent, $"Items[{i}].CgstPercent");
+                        CheckDecimalField(itm.SgstPercent, $"Items[{i}].SgstPercent");
+                        CheckDecimalField(itm.IgstPercent, $"Items[{i}].IgstPercent");
+                        if (itm.CgstPercent is < 0m or > 100m)
+                            validationErrors.Add($"Items[{i}].CgstPercent must be between 0 and 100.");
+                        if (itm.SgstPercent is < 0m or > 100m)
+                            validationErrors.Add($"Items[{i}].SgstPercent must be between 0 and 100.");
+                        if (itm.IgstPercent is < 0m or > 100m)
+                            validationErrors.Add($"Items[{i}].IgstPercent must be between 0 and 100.");
                     }
                 }
                 if (request.Items == null || request.Items.Count == 0 ||
                     request.Items.Any(it => it == null || it.ItemId <= 0 || it.Quantity <= 0))
                 {
                     validationErrors.Add("At least one valid item with a positive quantity is required.");
+                }
+
+                // FW_Bills_Items and FW_Invoice_Items identify a line by item. Reject
+                // duplicate item identities up front instead of allowing one line to
+                // overwrite another or fail later with a database key violation.
+                if (request.Items != null)
+                {
+                    var duplicateLine = request.Items
+                        .Where(it => it != null && it.ItemId > 0 && it.Quantity > 0)
+                        .GroupBy(it => it.ItemId)
+                        .FirstOrDefault(g => g.Count() > 1);
+                    if (duplicateLine != null)
+                        validationErrors.Add($"Item {duplicateLine.Key} appears more than once.");
                 }
 
                 if (validationErrors.Any())
@@ -1242,6 +1269,11 @@ namespace WebApp.Controllers
                             }
                             var totalCost = Math.Round(normalizedQty * itemCost, 2, MidpointRounding.AwayFromZero);
 
+                            if (it.TotalCost > 0m && Math.Abs(it.TotalCost - totalCost) > financialTolerance)
+                            {
+                                perRowValidationErrors.Add($"Item {it.ItemId} total does not match its quantity and price.");
+                            }
+
                             billAmount += totalCost;
 
                             // Determine whether this row should preserve its packed status (quantity and price unchanged)
@@ -1279,6 +1311,12 @@ namespace WebApp.Controllers
                             }
                         }
 
+                        if (perRowValidationErrors.Any())
+                        {
+                            tx.Rollback();
+                            return Json(new { success = false, message = "Validation failed", errors = perRowValidationErrors });
+                        }
+
                         if (isEdit)
                         {
                             var staleItems = billEntity.FwBillsItems
@@ -1292,8 +1330,9 @@ namespace WebApp.Controllers
                         billEntity.TotalBillAmount = billAmount;
                         billEntity.FinalAmount = billAmount;
                         // set payment fields if provided
-                        billEntity.AmountPaid = request.AmountPaid ?? 0m;
-                        billEntity.BalanceAmount = request.BalanceAmount ?? 0m;
+                        var estimateAmountPaid = Math.Max(0m, request.AmountPaid ?? 0m);
+                        billEntity.AmountPaid = Math.Round(Math.Min(estimateAmountPaid, billAmount), 2, MidpointRounding.AwayFromZero);
+                        billEntity.BalanceAmount = Math.Round(billAmount - billEntity.AmountPaid.Value, 2, MidpointRounding.AwayFromZero);
 
                         await _context.SaveChangesAsync();
 
@@ -1467,6 +1506,9 @@ namespace WebApp.Controllers
                         invEntity.CustGstin = request.CustomerGstin ?? invEntity.CustGstin;
 
                         decimal invAmount = 0m;
+                        decimal invCgstAmount = 0m;
+                        decimal invSgstAmount = 0m;
+                        decimal invIgstAmount = 0m;
                         int sl = 1;
 
                         // build conversion map for items present in request so qtyPerType can be resolved when not supplied
@@ -1524,7 +1566,20 @@ namespace WebApp.Controllers
 
                             var taxable = Math.Round(displayQty * discountedRatePerType, 2, MidpointRounding.AwayFromZero);
 
+                            // Tax values in the request are rates. Calculate the amounts
+                            // from the authoritative taxable value so persisted totals
+                            // cannot be changed by a client supplied TotalCost.
+                            var cgstPercent = Math.Clamp(it.CgstPercent ?? 0m, 0m, 100m);
+                            var sgstPercent = Math.Clamp(it.SgstPercent ?? 0m, 0m, 100m);
+                            var igstPercent = Math.Clamp(it.IgstPercent ?? 0m, 0m, 100m);
+                            var cgstAmount = Math.Round(taxable * cgstPercent / 100m, 2, MidpointRounding.AwayFromZero);
+                            var sgstAmount = Math.Round(taxable * sgstPercent / 100m, 2, MidpointRounding.AwayFromZero);
+                            var igstAmount = Math.Round(taxable * igstPercent / 100m, 2, MidpointRounding.AwayFromZero);
+
                             invAmount += taxable;
+                            invCgstAmount += cgstAmount;
+                            invSgstAmount += sgstAmount;
+                            invIgstAmount += igstAmount;
 
                             var invItem = new FwInvoiceItem
                             {
@@ -1548,8 +1603,14 @@ namespace WebApp.Controllers
                             _context.FwInvoiceItems.Add(invItem);
                         }
 
+                        invAmount = Math.Round(invAmount, 2, MidpointRounding.AwayFromZero);
+                        var taxAmount = Math.Round(invCgstAmount + invSgstAmount + invIgstAmount, 2, MidpointRounding.AwayFromZero);
+                        var invoiceTotal = Math.Round(invAmount + taxAmount, 2, MidpointRounding.AwayFromZero);
                         invEntity.BillAmount = invAmount;
-                        invEntity.TotalBillAmount = invAmount;
+                        invEntity.TotalBillAmount = invoiceTotal;
+                        var amountPaid = Math.Max(0m, invEntity.AmountPaid ?? 0m);
+                        invEntity.AmountPaid = Math.Round(Math.Min(amountPaid, invoiceTotal), 2, MidpointRounding.AwayFromZero);
+                        invEntity.BalanceAmount = Math.Round(invoiceTotal - invEntity.AmountPaid.Value, 2, MidpointRounding.AwayFromZero);
 
                         _context.SaveChanges();
                         tx.Commit();
