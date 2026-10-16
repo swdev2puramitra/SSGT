@@ -1340,7 +1340,13 @@ namespace WebApp.Controllers
                         var expectedItemCount = request.Items?.Count(x => x != null && x.ItemId > 0 && x.Quantity > 0) ?? 0;
                         if (persistedItems.Count != expectedItemCount)
                         {
-                            throw new InvalidOperationException($"Persisted bill item count failed validation (expected {expectedItemCount}, found {persistedItems.Count}).");
+                            var requestedItemIds = string.Join(",", request.Items!
+                                .Where(x => x != null && x.ItemId > 0 && x.Quantity > 0)
+                                .Select(x => x.ItemId));
+                            var persistedItemIds = string.Join(",", persistedItems.Select(x => x.ItemId));
+                            throw new InvalidOperationException(
+                                $"Persisted bill item count failed validation (expected {expectedItemCount}, found {persistedItems.Count}; " +
+                                $"requested items [{requestedItemIds}], persisted items [{persistedItemIds}]).");
                         }
 
                         const decimal persistedCostTolerance = 0.01m;
