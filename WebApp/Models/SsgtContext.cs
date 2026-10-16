@@ -875,6 +875,8 @@ public partial class SsgtContext : DbContext
             entity.Property(e => e.UserPassword)
                 .HasMaxLength(80)
                 .IsUnicode(false);
+            entity.Property(e => e.PasswordHash)
+                .HasMaxLength(200);
         });
 
         modelBuilder.Entity<FwStockTransfer>(entity =>

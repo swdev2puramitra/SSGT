@@ -8,6 +8,8 @@ public partial class FwUserDetail
 
     public string UserPassword { get; set; } = null!;
 
+    public string? PasswordHash { get; set; }
+
     public long? ContactNo { get; set; }
 
     public int? RoleId { get; set; }

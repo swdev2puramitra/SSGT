@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Text.Json;
@@ -34,10 +35,32 @@ namespace WebApp.Controllers
 
                 if (user != null)
                 {
-                    // The deployed FW_User_Details schema stores the client-side
-                    // SHA-256 value in UserPassword. Keep authentication aligned
-                    // with that schema; PasswordHash is not present in legacy DBs.
-                    if (user.UserPassword == model.UserPassword)
+                    var passwordHasher = new PasswordHasher<FwUserDetail>();
+                    var passwordValid = false;
+
+                    if (string.IsNullOrWhiteSpace(user.PasswordHash))
+                    {
+                        // Existing WinForms accounts store the client-side SHA-256
+                        // value in UserPassword. Migrate that value on first web login.
+                        if (user.UserPassword == model.UserPassword)
+                        {
+                            user.PasswordHash = passwordHasher.HashPassword(user, model.UserPassword);
+                            await _context.SaveChangesAsync();
+                            passwordValid = true;
+                        }
+                    }
+                    else
+                    {
+                        // Once migrated, UserPassword is ignored for web authentication.
+                        var result = passwordHasher.VerifyHashedPassword(
+                            user,
+                            user.PasswordHash,
+                            model.UserPassword);
+                        passwordValid = result == PasswordVerificationResult.Success ||
+                                        result == PasswordVerificationResult.SuccessRehashNeeded;
+                    }
+
+                    if (passwordValid)
                     {
                         var claims = new List<Claim>
                         {
