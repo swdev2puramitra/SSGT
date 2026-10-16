@@ -46,6 +46,8 @@ namespace WebApp.Controllers
             var selectedIds = (itemIds ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(x => int.TryParse(x, out var id) ? id : 0).Where(x => x > 0).Distinct().ToList();
             if (selectedIds.Count == 0) return Json(new { success = false, message = "Select at least one invoice item." });
+            if (string.IsNullOrWhiteSpace(ownerName) || string.IsNullOrWhiteSpace(vehicleNo) || string.IsNullOrWhiteSpace(eWayBillNo))
+                return Json(new { success = false, message = "Owner / Driver Name, Vehicle No, and E-Way Bill No are required." });
             await using var tx = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             try
             {
@@ -1046,6 +1048,14 @@ namespace WebApp.Controllers
             // or FW_Invoice/FW_Invoice_Items (invoices). Support create and edit (request.BillId)
             try
             {
+                if (!request.IsEstimate &&
+                    (string.IsNullOrWhiteSpace(request.OwnerName) ||
+                     string.IsNullOrWhiteSpace(request.VehicleNo) ||
+                     string.IsNullOrWhiteSpace(request.EWayBillNo)))
+                {
+                    return Json(new { success = false, message = "Owner / Driver Name, Vehicle No, and E-Way Bill No are required for an invoice." });
+                }
+
                 var currentUserIdClaim = User.FindFirst("UserId")?.Value;
                 var currentUserId = currentUserIdClaim != null ? int.Parse(currentUserIdClaim) : 0;
 

@@ -180,15 +180,15 @@
                                 <div class="row mt-2">
                                     <div class="col-md-3">
                                         <label for="vehicleNo">Vehicle No</label>
-                                        <input id="vehicleNo" class="form-control" placeholder="Vehicle No" maxlength="10" />
+                                        <input id="vehicleNo" class="form-control" placeholder="Vehicle No" maxlength="10" required />
                                     </div>
                                     <div class="col-md-3">
                                         <label for="ownerName">Owner Name</label>
-                                        <input id="ownerName" class="form-control" placeholder="Owner Name" maxlength="100" />
+                                        <input id="ownerName" class="form-control" placeholder="Owner Name" maxlength="100" required />
                                     </div>
                                     <div class="col-md-3">
                                         <label for="eWayBillNo">EWay Bill No</label>
-                                        <input id="eWayBillNo" class="form-control" placeholder="EWay Bill No" maxlength="50" />
+                                        <input id="eWayBillNo" class="form-control" placeholder="EWay Bill No" maxlength="50" required />
                                     </div>
                                 </div>
                             </fieldset>
@@ -653,6 +653,20 @@
                         var ig = parseFloat(document.getElementById('igst').value || '0') || 0;
                         var totalBill = 0;
                         var isEstimate = !document.getElementById('invoiceRadio').checked; // estimate when invoiceRadio not checked
+                if (!isEstimate) {
+                    var requiredInvoiceFields = [
+                        ['ownerName', 'Owner / Driver Name'],
+                        ['vehicleNo', 'Vehicle No'],
+                        ['eWayBillNo', 'E-Way Bill No']
+                    ];
+                    for (var fi = 0; fi < requiredInvoiceFields.length; fi++) {
+                        if (!((document.getElementById(requiredInvoiceFields[fi][0]).value || '').trim())) {
+                            alert(requiredInvoiceFields[fi][1] + ' is required for an invoice.');
+                            document.getElementById(requiredInvoiceFields[fi][0]).focus();
+                            return;
+                        }
+                    }
+                }
                         var billAmt = parseFloat(document.getElementById('billAmount').value || '0') || 0;
 
                         if (isEstimate) {

@@ -12,9 +12,9 @@
         <input type="hidden" id="invoiceId" value="@invoice.InvoiceId" />
         <input type="hidden" id="invoiceNo" value="@invoice.InvoiceNo" />
         <div class="row g-3 mb-3">
-            <div class="col-md-4"><label class="form-label">Owner / Driver Name</label><input class="form-control" id="ownerName" value="@invoice.OwnerName" /></div>
-            <div class="col-md-4"><label class="form-label">Vehicle No</label><input class="form-control" id="vehicleNo" value="@invoice.VehicleNo" /></div>
-            <div class="col-md-4"><label class="form-label">E-Way Bill No</label><input class="form-control" id="eWayBillNo" value="@invoice.WayBill" /></div>
+            <div class="col-md-4"><label class="form-label">Owner / Driver Name</label><input class="form-control" id="ownerName" value="@invoice.OwnerName" required /></div>
+            <div class="col-md-4"><label class="form-label">Vehicle No</label><input class="form-control" id="vehicleNo" value="@invoice.VehicleNo" required /></div>
+            <div class="col-md-4"><label class="form-label">E-Way Bill No</label><input class="form-control" id="eWayBillNo" value="@invoice.WayBill" required /></div>
         </div>
         <table class="table table-dark table-striped">
             <thead><tr><th>Select</th><th>Item</th><th>Quantity</th><th>Total</th></tr></thead>
@@ -40,6 +40,9 @@ document.getElementById('splitForm').addEventListener('submit', function (e) {
     e.preventDefault();
     const ids = Array.from(document.querySelectorAll('.split-item:checked')).map(x => x.value);
     if (!ids.length) { alert('Select at least one item.'); return; }
+    for (const field of [['ownerName', 'Owner / Driver Name'], ['vehicleNo', 'Vehicle No'], ['eWayBillNo', 'E-Way Bill No']]) {
+        if (!document.getElementById(field[0]).value.trim()) { alert(field[1] + ' is required.'); document.getElementById(field[0]).focus(); return; }
+    }
     const body = new URLSearchParams();
     body.set('invoiceId', document.getElementById('invoiceId').value);
     body.set('invoiceNo', document.getElementById('invoiceNo').value);
