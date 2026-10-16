@@ -169,7 +169,7 @@
                     var estimateValue = (data.estimate || data.Estimate || '') + '';
                     var isInvoiceRow = estimateValue.toLowerCase() === 'no' || estimateValue.toLowerCase() === 'invoice' || !!data.invoiceNo;
                     if (isInvoiceRow && data.invoiceNo) {
-                        buttons += '<button class="btn btn-sm btn-warning action-split" data-invoiceid="' + (data.invoiceId || id) + '" data-invoiceno="' + (data.invoiceNo || '') + '" title="Split invoice by items"><i class="fas fa-code-branch"></i></button>';
+                        buttons += '<button class="btn btn-sm btn-warning action-split" data-billid="' + id + '" data-invoiceid="' + (data.invoiceId || id) + '" data-invoiceno="' + (data.invoiceNo || '') + '" title="Split invoice by items"><i class="fas fa-code-branch"></i></button>';
                     }
                     buttons += '</div>';
                     return buttons;
