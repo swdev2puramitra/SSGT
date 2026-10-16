@@ -91,7 +91,9 @@ namespace WebApp.Controllers
                 source.BillAmount = remainingBase; source.TotalBillAmount = remainingBase + remainingTax;
                 source.AmountPaid = Math.Min(source.AmountPaid ?? 0m, source.TotalBillAmount.Value); source.BalanceAmount = source.TotalBillAmount - source.AmountPaid;
                 await _context.SaveChangesAsync(); await tx.CommitAsync();
-                return Json(new { success = true, invoiceId = split.InvoiceId, invoiceNo = split.InvoiceNo });
+                var splitTemplate = split.IsInState == false ? "InvoiceOutOfState" : "InvoiceInState";
+                var splitPreviewUrl = Url.Action("PreviewPdf", "Billing", new { billId = split.InvoiceId, invoiceNo = split.InvoiceNo, template = splitTemplate }, Request.Scheme, Request.Host.Value);
+                return Json(new { success = true, invoiceId = split.InvoiceId, invoiceNo = split.InvoiceNo, previewUrl = splitPreviewUrl });
             }
             catch (Exception ex)
             {
