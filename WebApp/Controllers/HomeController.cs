@@ -236,6 +236,8 @@ namespace WebApp.Controllers
                                 CustomerType = b.CustomerType,
                                 b.CustomerId,
                                 WayBill = (string?)null,
+                                InvoiceNo = (string?)null,
+                                InvoiceStatus = 0,
                                 IsInState = b.IsInState,
                                 IsVerified = b.IsVerified,
                                 DispatchStatus = b.DispatchStatus
@@ -254,20 +256,20 @@ namespace WebApp.Controllers
                                CustomerType = i.CustomerType,
                                i.CustomerId,
                                WayBill = i.WayBill,
+                               InvoiceNo = i.InvoiceNo,
+                               InvoiceStatus = i.InvoiceStatus ?? 0,
                                IsInState = i.IsInState,
                                IsVerified = (bool?)false,
                                DispatchStatus = "C"
                            };
 
             // Ensure both sequences are the same concrete anonymous type shape before Union
-            var estimatesCast = estimates.Select(e => new { e.BillId, e.BillNo, e.TotalBillAmount, e.BillDate, e.IsEstimateInvoice, e.CustomerType, e.CustomerId, e.WayBill, e.IsInState, e.IsVerified, e.DispatchStatus });
-            var invoicesCast = invoices.Select(i => new { i.BillId, i.BillNo, i.TotalBillAmount, i.BillDate, i.IsEstimateInvoice, i.CustomerType, i.CustomerId, i.WayBill, i.IsInState, i.IsVerified, i.DispatchStatus });
+            var estimatesCast = estimates.Select(e => new { e.BillId, e.BillNo, e.TotalBillAmount, e.BillDate, e.IsEstimateInvoice, e.CustomerType, e.CustomerId, e.WayBill, e.InvoiceNo, e.InvoiceStatus, e.IsInState, e.IsVerified, e.DispatchStatus });
+            var invoicesCast = invoices.Select(i => new { i.BillId, i.BillNo, i.TotalBillAmount, i.BillDate, i.IsEstimateInvoice, i.CustomerType, i.CustomerId, i.WayBill, i.InvoiceNo, i.InvoiceStatus, i.IsInState, i.IsVerified, i.DispatchStatus });
             var combined = estimatesCast.Concat(invoicesCast);
 
             var q = from b in combined
                     join c in _context.FwMasterCustomers on b.CustomerId equals c.CustomerId
-                    join inv in _context.FwInvoices on b.BillId equals inv.BillId into invj
-                    from invx in invj.DefaultIfEmpty()
                     join billRef in _context.FwBills on b.BillId equals billRef.BillId into billj
                     from billRefx in billj.DefaultIfEmpty()
                     where (!createdDate.HasValue || (b.BillDate != null && ((DateTime)b.BillDate).Date == createdDate.Value.Date))
@@ -289,8 +291,8 @@ namespace WebApp.Controllers
                         WayBill = b.WayBill,
                         IsInState = b.IsInState,
                         DispatchStatus = billRefx != null ? billRefx.DispatchStatus : null,
-                        InvoiceNo = invx != null ? invx.InvoiceNo : null,
-                        InvoiceStatus = invx != null && invx.InvoiceStatus.HasValue ? invx.InvoiceStatus.Value : 0,
+                        InvoiceNo = b.InvoiceNo,
+                        InvoiceStatus = b.InvoiceStatus,
                         PhoneNo = c.MobileNo ?? 0,
                         CustomerName = c.Name,
                         CustAddress = c.CustAddress,
