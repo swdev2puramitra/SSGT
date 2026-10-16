@@ -188,7 +188,7 @@ namespace WebApp.Services.Pdf
                                 table.Cell().Element(c => PdfServiceShared.TableCellStyle(c)).Text(it.SlNo.ToString());                               
                                 table.Cell().Element(c => PdfServiceShared.TableCellStyle(c)).Text(it.ItemName);
                                 table.Cell().Element(c => PdfServiceShared.TableCellStyle(c)).AlignRight().Text(it.HsnCode);
-                                table.Cell().Element(c => PdfServiceShared.TableCellStyle(c)).AlignRight().Text(it.Qty.ToString("0.##"));
+                                table.Cell().Element(c => PdfServiceShared.TableCellStyle(c)).AlignRight().Text(it.NormalizedQuantity.ToString("0.##"));
                                 table.Cell().Element(c => PdfServiceShared.TableCellStyle(c)).AlignRight().Text(it.Rate.ToString("0.00") + " / " + it.TypeName);
                                 table.Cell().Element(c => PdfServiceShared.TableCellStyle(c)).AlignRight().Text(it.Upc);
                                 table.Cell().Element(c => PdfServiceShared.TableCellStyle(c)).AlignRight().Text(it.Discount.ToString("0.##") + " %");

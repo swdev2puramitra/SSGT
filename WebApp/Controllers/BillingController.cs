@@ -294,62 +294,88 @@ namespace WebApp.Controllers
                         // Prefer percent-based storage: if value is between 0 and 100 treat as percent, else treat as absolute amount.
                         decimal cgstAmt = 0m, sgstAmt = 0m, igstAmt = 0m;
                         decimal cgstPercent = 0m, sgstPercent = 0m, igstPercent = 0m;
-
-                        if (it.Cgst.HasValue)
+                        if (Convert.ToBoolean(inv.IsInState))
                         {
-                            var v = it.Cgst.Value;
-                            if (v >= 0m && v <= 100m)
+                            if (it.Cgst.HasValue)
                             {
-                                cgstPercent = v;
-                                cgstAmt = Math.Round(taxable * cgstPercent / 100m, 2);
+                                var v = it.Cgst.Value;
+                                if (v >= 0m && v <= 100m)
+                                {
+                                    cgstPercent = v;
+                                    cgstAmt = Math.Round(taxable * cgstPercent / 100m, 2);
+                                }
+                                else
+                                {
+                                    cgstAmt = v;
+                                    cgstPercent = taxable > 0m ? Math.Round(cgstAmt * 100m / taxable, 2) : 0m;
+                                }
                             }
-                            else
+
+                            if (it.Sgst.HasValue)
                             {
-                                cgstAmt = v;
-                                cgstPercent = taxable > 0m ? Math.Round(cgstAmt * 100m / taxable, 2) : 0m;
+                                var v = it.Sgst.Value;
+                                if (v >= 0m && v <= 100m)
+                                {
+                                    sgstPercent = v;
+                                    sgstAmt = Math.Round(taxable * sgstPercent / 100m, 2);
+                                }
+                                else
+                                {
+                                    sgstAmt = v;
+                                    sgstPercent = taxable > 0m ? Math.Round(sgstAmt * 100m / taxable, 2) : 0m;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (it.Igst.HasValue)
+                            {
+                                var v = it.Igst.Value;
+                                if (v >= 0m && v <= 100m)
+                                {
+                                    igstPercent = v;
+                                    igstAmt = Math.Round(taxable * igstPercent / 100m, 2);
+                                }
+                                else
+                                {
+                                    igstAmt = v;
+                                    igstPercent = taxable > 0m ? Math.Round(igstAmt * 100m / taxable, 2) : 0m;
+                                }
                             }
                         }
 
-                        if (it.Sgst.HasValue)
+                        // Invoice GST is fixed by the state of supply: 9% CGST + 9% SGST
+                        // for in-state invoices, or 18% IGST for out-of-state invoices.
+                        if (model.IsInState)
                         {
-                            var v = it.Sgst.Value;
-                            if (v >= 0m && v <= 100m)
-                            {
-                                sgstPercent = v;
-                                sgstAmt = Math.Round(taxable * sgstPercent / 100m, 2);
-                            }
-                            else
-                            {
-                                sgstAmt = v;
-                                sgstPercent = taxable > 0m ? Math.Round(sgstAmt * 100m / taxable, 2) : 0m;
-                            }
+                            cgstPercent = 9m;
+                            sgstPercent = 9m;
+                            igstPercent = 0m;
+                            cgstAmt = Math.Round(taxable * 0.09m, 2, MidpointRounding.AwayFromZero);
+                            sgstAmt = Math.Round(taxable * 0.09m, 2, MidpointRounding.AwayFromZero);
+                            igstAmt = 0m;
                         }
-
-                        if (it.Igst.HasValue)
+                        else
                         {
-                            var v = it.Igst.Value;
-                            if (v >= 0m && v <= 100m)
-                            {
-                                igstPercent = v;
-                                igstAmt = Math.Round(taxable * igstPercent / 100m, 2);
-                            }
-                            else
-                            {
-                                igstAmt = v;
-                                igstPercent = taxable > 0m ? Math.Round(igstAmt * 100m / taxable, 2) : 0m;
-                            }
+                            cgstPercent = 0m;
+                            sgstPercent = 0m;
+                            igstPercent = 18m;
+                            cgstAmt = 0m;
+                            sgstAmt = 0m;
+                            igstAmt = Math.Round(taxable * 0.18m, 2, MidpointRounding.AwayFromZero);
                         }
 
                         // Split item name into CompanyName (first token) and remaining ItemName
-                        var rawItemName = it.Item?.ItemName ?? "Item";
-                        var tokens = (rawItemName ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                        var compName = tokens.Length > 0 ? tokens[0] : string.Empty;
-                        var itemNameRest = tokens.Length > 1 ? string.Join(' ', tokens.Skip(1)) : rawItemName;
+                        //var rawItemName = it.Item?.ItemName ?? "Item";
+                        //var tokens = (rawItemName ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        //var compName = tokens.Length > 0 ? tokens[0] : string.Empty;
+                        //var itemNameRest = tokens.Length > 1 ? string.Join(' ', tokens.Skip(1)) : rawItemName;
+                        var itemNameRest = it.Item?.ItemName ?? "Item";
 
                         model.Items.Add(new WebApp.Models.Pdf.PdfBillItem
                         {
                             SlNo = it.SlNo ?? 0,
-                            CompanyName = compName,
+                            CompanyName = "",
                             ItemName = itemNameRest,
                             HsnCode = hsn,
                             TypeName = it.ItemType?.TypeName ?? string.Empty,
@@ -938,29 +964,29 @@ namespace WebApp.Controllers
                                 : it.quantity;
                             return new
                             {
-                            it.slNo,
-                            it.billId,
-                            it.itemId,
-                            it.itemCode,
-                            it.itemName,
-                            it.itemTypeId,
-                            it.itemTypeName,
-                            detailed = ItemTypeDescriptionHelper.GetItemTypewiseDescription(_context, it.itemId, normalizedQuantity),
-                            originalEntry = it.sellQty.HasValue && it.sellQty.Value > 0
+                                it.slNo,
+                                it.billId,
+                                it.itemId,
+                                it.itemCode,
+                                it.itemName,
+                                it.itemTypeId,
+                                it.itemTypeName,
+                                detailed = ItemTypeDescriptionHelper.GetItemTypewiseDescription(_context, it.itemId, normalizedQuantity),
+                                originalEntry = it.sellQty.HasValue && it.sellQty.Value > 0
                                 ? $"{it.sellQty.Value} {it.itemTypeName}'s"
                                 : string.Empty,
-                            quantity = normalizedQuantity,
-                            it.itemPrice,
-                            it.totalCost,
-                            it.cgst,
-                            it.sgst,
-                            it.igst,
-                            it.changedPrice,
-                            it.isPriceModified,
-                            it.sellType,
-                            it.sellQty,
-                            hsnCode = itemToHsnLookup.ContainsKey(it.itemId) ? itemToHsnLookup[it.itemId] : string.Empty,
-                            it.originalCost
+                                quantity = normalizedQuantity,
+                                it.itemPrice,
+                                it.totalCost,
+                                it.cgst,
+                                it.sgst,
+                                it.igst,
+                                it.changedPrice,
+                                it.isPriceModified,
+                                it.sellType,
+                                it.sellQty,
+                                hsnCode = itemToHsnLookup.ContainsKey(it.itemId) ? itemToHsnLookup[it.itemId] : string.Empty,
+                                it.originalCost
                             };
                         }).ToList().OrderByDescending(i => i.slNo);
                         // Recompute totals from items to ensure estimate PDF matches client-side amounts
@@ -1063,29 +1089,29 @@ namespace WebApp.Controllers
                                     : it.quantity;
                                 return new
                                 {
-                                it.slNo,
-                                it.billId,
-                                it.itemId,
-                                it.itemCode,
-                                it.itemName,
-                                it.itemTypeId,
-                                it.itemTypeName,
-                                detailed = ItemTypeDescriptionHelper.GetItemTypewiseDescription(_context, it.itemId, normalizedQuantity),
-                                originalEntry = it.sellQty.HasValue && it.sellQty.Value > 0
+                                    it.slNo,
+                                    it.billId,
+                                    it.itemId,
+                                    it.itemCode,
+                                    it.itemName,
+                                    it.itemTypeId,
+                                    it.itemTypeName,
+                                    detailed = ItemTypeDescriptionHelper.GetItemTypewiseDescription(_context, it.itemId, normalizedQuantity),
+                                    originalEntry = it.sellQty.HasValue && it.sellQty.Value > 0
                                     ? $"{it.sellQty.Value} {it.itemTypeName}'s"
                                     : string.Empty,
-                                quantity = normalizedQuantity,
-                                it.itemPrice,
-                                it.totalCost,
-                                it.cgst,
-                                it.sgst,
-                                it.igst,
-                                it.changedPrice,
-                                it.isPriceModified,
-                                it.sellType,
-                                it.sellQty,
-                                it.hsnCode,
-                                it.originalCost
+                                    quantity = normalizedQuantity,
+                                    it.itemPrice,
+                                    it.totalCost,
+                                    it.cgst,
+                                    it.sgst,
+                                    it.igst,
+                                    it.changedPrice,
+                                    it.isPriceModified,
+                                    it.sellType,
+                                    it.sellQty,
+                                    it.hsnCode,
+                                    it.originalCost
                                 };
                             }).ToList().OrderByDescending(i => i.slNo);
 
