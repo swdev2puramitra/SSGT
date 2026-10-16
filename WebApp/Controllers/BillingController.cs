@@ -766,7 +766,7 @@ namespace WebApp.Controllers
         }
 
         // GET: /Billing/FireWorksBilling
-        public IActionResult FireWorksBilling(long? billId)
+        public IActionResult FireWorksBilling(long? billId, long? invoiceId, string? invoiceNo)
         {
             LoadMenusFromSession();
 
@@ -789,7 +789,10 @@ namespace WebApp.Controllers
                 try
                 {
                     // Check if an invoice exists for this bill
-                    var invoice = _context.FwInvoices.AsNoTracking().FirstOrDefault(i => i.BillId == billId.Value);
+                    var invoice = _context.FwInvoices.AsNoTracking()
+                        .FirstOrDefault(i => (invoiceId.HasValue && i.InvoiceId == invoiceId.Value) ||
+                                             (!string.IsNullOrWhiteSpace(invoiceNo) && i.InvoiceNo == invoiceNo) ||
+                                             (!invoiceId.HasValue && string.IsNullOrWhiteSpace(invoiceNo) && i.BillId == billId.Value));
                     if (invoice != null)
                     {
                         var header = new
@@ -823,7 +826,7 @@ namespace WebApp.Controllers
 
                         var itemsTemp = _context.FwInvoiceItems
                             .AsNoTracking()
-                            .Where(it => it.BillId == billId.Value)
+                            .Where(it => it.InvoiceId == invoice.InvoiceId)
                             .Select(it => new
                             {
                                 slNo = it.SlNo,

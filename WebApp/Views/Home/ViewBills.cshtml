@@ -218,7 +218,8 @@
                     if(t.classList.contains('action-edit')){
                         var userRole = window.CURRENT_USER_ROLE || 0;
                         if(userRole === 1){
-                            window.location.href = '/Billing/FireWorksBilling?billId=' + encodeURIComponent(bid);
+                            var invoiceQuery = data.invoiceNo ? '&invoiceNo=' + encodeURIComponent(data.invoiceNo) : '';
+                            window.location.href = '/Billing/FireWorksBilling?billId=' + encodeURIComponent(bid) + invoiceQuery;
                         } else {
                             alert('Access denied: only administrators can edit bills.');
                         }
