@@ -75,7 +75,7 @@ namespace WebApp.Controllers
                 await _context.SaveChangesAsync();
                 foreach (var item in selected)
                 {
-                    _context.FwInvoiceItems.Add(new FwInvoiceItem { InvoiceId = split.InvoiceId, BillId = source.BillId,
+                    _context.FwInvoiceItems.Add(new FwInvoiceItem { Invoice = split, InvoiceId = split.InvoiceId, BillId = source.BillId,
                         ItemId = item.ItemId, ItemTypeId = item.ItemTypeId, Quantity = item.Quantity, ItemCost = item.ItemCost,
                         TotalCost = item.TotalCost, Cgst = item.Cgst, Sgst = item.Sgst, Igst = item.Igst, SlNo = item.SlNo,
                         ChangedPrice = item.ChangedPrice, SellType = item.SellType, SellQty = item.SellQty,
@@ -916,6 +916,7 @@ namespace WebApp.Controllers
                             customerType = header.customerType,
                             isEstimate = header.isEstimate,
                             billAmount = header.billAmount,
+                            invoiceId = header.invoiceId,
                             discountPerItem = header.discountPerItem,
                             discountPercentage = header.discountPercentage,
                             isInState = header.isInState,
@@ -1709,6 +1710,7 @@ namespace WebApp.Controllers
 
                             var invItem = new FwInvoiceItem
                             {
+                                Invoice = invEntity,
                                 InvoiceId = invEntity.InvoiceId,
                                 BillId = invEntity.BillId,
                                 ItemId = it.ItemId,
