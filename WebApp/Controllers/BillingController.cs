@@ -1260,13 +1260,10 @@ namespace WebApp.Controllers
                             // ItemCost is the lowest-level rate supplied by the grid; only an explicit price edit overrides it.
                             decimal itemCost = isPriceModified ? changedPrice.GetValueOrDefault() : suppliedItemCost;
 
+                            // The billing grid sends Quantity in lowest-level units.
+                            // SellQty/SellType are retained as display metadata and must
+                            // not convert the already-normalized quantity a second time.
                             var normalizedQty = it.Quantity;
-                            if (it.SellQty.HasValue && it.SellQty.Value > 0 && it.SellType.HasValue && it.SellType.Value > 0)
-                            {
-                                normalizedQty = _quantityConversionHelper
-                                    .ConvertToLowestLevel(it.ItemId, it.SellType.Value, it.SellQty.Value, itemCost)
-                                    .normalizedQty;
-                            }
                             var totalCost = Math.Round(normalizedQty * itemCost, 2, MidpointRounding.AwayFromZero);
 
                             if (it.TotalCost > 0m && Math.Abs(it.TotalCost - totalCost) > financialTolerance)
