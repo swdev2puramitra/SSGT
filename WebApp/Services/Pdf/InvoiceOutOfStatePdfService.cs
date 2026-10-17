@@ -298,6 +298,21 @@ namespace WebApp.Services.Pdf
                                 left.Item().Text("EWay Bill No: " + model.EWayBillNo).FontSize(9);
                             });
                         });
+                        col.Item().PaddingTop(8).Column(terms =>
+                        {
+                            terms.Item().Text("Terms and conditions").Bold().FontSize(9);
+                            terms.Item().Text("1. Once product is dispatched it's owner responsibility during transit.").FontSize(8);
+                            terms.Item().Text("2. Order estimate cannot be cancelled after receiving payment in advance.").FontSize(8);
+                            terms.Item().Text("3. Order can be modified but subjected to availability.").FontSize(8);
+                            terms.Item().Text("4. Once packing of goods is done, it cannot be altered.").FontSize(8);
+                            terms.Item().Text("5. Any objections on dispatch will be allowed within 24 hours after delivery.").FontSize(8);
+                            terms.Item().Text("6. Rates of items will be variable according to current market price.").FontSize(8);
+                            terms.Item().Text("7. Delivery of items will be done as per subject of availability. Schedule delivery date as early as possible.").FontSize(8);
+                            terms.Item().Text("8. Goods once sold cannot be taken back.").FontSize(8);
+                            terms.Item().Text("9. If any discrepancy, it is subject to Rayachoti jurisdiction.").FontSize(8);
+                            terms.Item().Text("10. Dispatch of goods will not be entertained one week before Diwali.").FontSize(8);
+                            terms.Item().Text("11. Dispatch of goods will be done as per schedule date without any delay.").FontSize(8);
+                        });
                     });
 
                     page.Footer().AlignCenter().Element(f =>
