@@ -156,8 +156,9 @@
                 title: 'Order Confirmed', field: 'orderConfirmed', width: 125, hozAlign: 'center', formatter: function(cell) {
                     var rowData = cell.getRow().getData() || {};
                     var value = cell.getValue();
-                    if (typeof value === 'undefined') value = rowData.orderConfirmed ?? rowData.OrderConfirmed;
-                    var confirmed = value === true || value === 1 || (typeof value === 'string' && value.toLowerCase() === 'true');
+                    if (typeof value === 'undefined') value = rowData.orderConfirmed ?? rowData.OrderConfirmed ?? rowData.isVerified ?? rowData.IsVerified;
+                    var normalizedValue = typeof value === 'string' ? value.toLowerCase() : value;
+                    var confirmed = value === true || value === 1 || normalizedValue === 'true' || normalizedValue === '1' || normalizedValue === 'yes';
                     return confirmed ? '<span class="text-success fw-bold"><i class="fas fa-check-circle"></i> Yes</span>' : '<span class="text-danger fw-bold"><i class="fas fa-times-circle"></i> No</span>';
                 }
             },
@@ -170,9 +171,12 @@
                         buttons += '<button class="btn btn-sm btn-info action-edit" data-billid="' + id + '" data-invoiceno="' + (data.invoiceNo || '') + '"><i class="fas fa-edit"></i></button>';
                     }
                     if (window.CURRENT_USER_ROLE === 1 || window.CURRENT_USER_ROLE === 2) {
-                        var confirmedValue = data.orderConfirmed ?? data.OrderConfirmed;
-                        var confirmed = confirmedValue === true || confirmedValue === 1 || (typeof confirmedValue === 'string' && confirmedValue.toLowerCase() === 'true');
-                        buttons += '<button class="btn btn-sm ' + (confirmed ? 'btn-success' : 'btn-outline-warning') + ' action-order-confirm" data-billid="' + id + '" data-confirmed="' + (!confirmed) + '" title="' + (confirmed ? 'Mark order as not confirmed' : 'Confirm order') + '"><i class="fas fa-clipboard-check"></i></button>';
+                        var confirmedValue = data.orderConfirmed ?? data.OrderConfirmed ?? data.isVerified ?? data.IsVerified;
+                        var normalizedConfirmedValue = typeof confirmedValue === 'string' ? confirmedValue.toLowerCase() : confirmedValue;
+                        var confirmed = confirmedValue === true || confirmedValue === 1 || normalizedConfirmedValue === 'true' || normalizedConfirmedValue === '1' || normalizedConfirmedValue === 'yes';
+                        if (!confirmed) {
+                            buttons += '<button class="btn btn-sm btn-outline-warning action-order-confirm" data-billid="' + id + '" data-confirmed="true" title="Confirm order"><i class="fas fa-clipboard-check"></i></button>';
+                        }
                     }
                     // Admins can reopen the packing dashboard after dispatch; use an alternate color.
                     var dispatchStatus = (data.DispatchStatus || data.dispatchStatus || '') + '';
