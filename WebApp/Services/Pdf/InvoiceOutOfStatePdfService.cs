@@ -104,19 +104,19 @@ namespace WebApp.Services.Pdf
                         {
                             c.Table(tableBuilder =>
                             {
-                                // Add Per and UPC columns so both are visible on out-of-state invoices.
+                                // Keep the out-of-state invoice columns in the business-required order.
                                 tableBuilder.ColumnsDefinition(cd =>
                                 {
                                     cd.ConstantColumn(28);    // Sl
                                     cd.RelativeColumn();      // Item Name
-                                    cd.ConstantColumn(40);    // Per (TypeName)
-                                    cd.ConstantColumn(60);    // UPC
-                                    cd.ConstantColumn(60);    // HSN
+                                    cd.ConstantColumn(55);    // HSN
                                     cd.ConstantColumn(48);    // Qty
-                                    cd.ConstantColumn(60);    // Rate
+                                    cd.ConstantColumn(85);    // Rate/Per
+                                    cd.ConstantColumn(55);    // UPC
+                                    cd.ConstantColumn(55);    // Discount
                                     cd.ConstantColumn(60);    // Taxable
-                                    cd.ConstantColumn(60);    // IGST %
-                                    cd.ConstantColumn(60);    // IGST Amount
+                                    cd.ConstantColumn(48);    // GST
+                                    cd.ConstantColumn(70);    // IGST
                                     cd.ConstantColumn(60);    // Total
                                 });
 
@@ -124,13 +124,13 @@ namespace WebApp.Services.Pdf
                                 {
                                     header.Cell().Element(h => h.Border(0.5f).Padding(4).Text("Sl").Bold());
                                     header.Cell().Element(h => h.Border(0.5f).Padding(4).Text("Item Name").Bold());
-                                    header.Cell().Element(h => h.Border(0.5f).Padding(4).Text("Per").Bold());
-                                    header.Cell().Element(h => h.Border(0.5f).Padding(4).Text("UPC").Bold());
-                                    header.Cell().Element(h => h.Border(0.5f).Padding(4).Text("HSN").Bold());
+                                    header.Cell().Element(h => h.Border(0.5f).Padding(4).Text("HSN Code").Bold());
                                     header.Cell().Element(h => h.Border(0.5f).Padding(4).Text("Qty").Bold());
-                                    header.Cell().Element(h => h.Border(0.5f).Padding(4).Text("Rate").Bold());
+                                    header.Cell().Element(h => h.Border(0.5f).Padding(4).Text("Rate/Per").Bold());
+                                    header.Cell().Element(h => h.Border(0.5f).Padding(4).Text("UPC").Bold());
+                                    header.Cell().Element(h => h.Border(0.5f).Padding(4).Text("Discount").Bold());
                                     header.Cell().Element(h => h.Border(0.5f).Padding(4).Text("Taxable").Bold());
-                                    header.Cell().Element(h => h.Border(0.5f).Padding(4).Text("IGST %").Bold());
+                                    header.Cell().Element(h => h.Border(0.5f).Padding(4).Text("GST").Bold());
                                     header.Cell().Element(h => h.Border(0.5f).Padding(4).Text("IGST").Bold());
                                     header.Cell().Element(h => h.Border(0.5f).Padding(4).Text("Total").Bold());
                                 });
@@ -140,33 +140,26 @@ namespace WebApp.Services.Pdf
                                     var displayName = string.IsNullOrWhiteSpace(it.CompanyName) ? it.ItemName : it.CompanyName + " " + it.ItemName;
                                     tableBuilder.Cell().Element(cell => cell.Border(0.5f).Padding(4).Text(it.SlNo.ToString()));
                                     tableBuilder.Cell().Element(cell => cell.Border(0.5f).Padding(4).Text(displayName));
-                                    // 'Per' shows the TypeName on PdfBillItem
-                                    tableBuilder.Cell().Element(cell => cell.Border(0.5f).Padding(4).Text(it.TypeName));
-                                    // UPC column
-                                    tableBuilder.Cell().Element(cell => cell.Border(0.5f).Padding(4).Text(it.Upc));
                                     tableBuilder.Cell().Element(cell => cell.Border(0.5f).Padding(4).Text(it.HsnCode));
                                     tableBuilder.Cell().Element(cell => cell.Border(0.5f).Padding(4).Text(it.Qty.ToString("0.##")).AlignRight());
-                                    tableBuilder.Cell().Element(cell => cell.Border(0.5f).Padding(4).Text(it.Rate.ToString("0.00")).AlignRight());
+                                    tableBuilder.Cell().Element(cell => cell.Border(0.5f).Padding(4).Text(it.Rate.ToString("0.00") + " / " + it.TypeName).AlignRight());
+                                    tableBuilder.Cell().Element(cell => cell.Border(0.5f).Padding(4).Text(it.Upc));
+                                    tableBuilder.Cell().Element(cell => cell.Border(0.5f).Padding(4).Text(it.Discount.ToString("0.##") + " %").AlignRight());
                                     tableBuilder.Cell().Element(cell => cell.Border(0.5f).Padding(4).Text(it.Taxable.ToString("0.00")).AlignRight());
-                                    // PdfBillItem stores IGST percent in 'Igst' and the absolute amount in 'IgstAmount'
                                     tableBuilder.Cell().Element(cell => cell.Border(0.5f).Padding(4).Text(it.Igst.ToString("0.00") + " %").AlignRight());
                                     tableBuilder.Cell().Element(cell => cell.Border(0.5f).Padding(4).Text(it.IgstAmount.ToString("0.00")).AlignRight());
-                                    // Ensure Total is computed as (Qty * Rate) + IGST amount to avoid mismatches
-                                    var computedTotal = Math.Round((it.Qty * it.Rate) + it.IgstAmount, 2);
-                                    tableBuilder.Cell().Element(cell => cell.Border(0.5f).Padding(4).Text(computedTotal.ToString("0.00")).AlignRight());
+                                    tableBuilder.Cell().Element(cell => cell.Border(0.5f).Padding(4).Text(it.Total.ToString("0.00")).AlignRight());
                                 }
 
-                                // Footer sums - adjust colspan to account for two added columns (Per, UPC)
+                                // Footer sums for taxable, GST/IGST and total.
                                 tableBuilder.Footer(footer =>
                                 {
-                                    // Span Sl, Item Name, Per, UPC, HSN, Qty, Rate
+                                    // Span Sl, Item Name, HSN, Qty, Rate/Per, UPC, Discount
                                     footer.Cell().ColumnSpan(7).Element(c => c.Border(0.5f).Padding(4).Text("Total").Bold());
                                     var sumTaxable = model.Items.Sum(x => x.Taxable);
                                     var igstTotal = model.Items.Sum(x => x.IgstAmount);
-                                    // Recompute grand total as sum of (qty*rate)+igst for each item
-                                    var sumTotal = model.Items.Sum(x => Math.Round((x.Qty * x.Rate) + x.IgstAmount, 2));
+                                    var sumTotal = model.Items.Sum(x => x.Total);
                                     footer.Cell().Element(c => c.Border(0.5f).Padding(4).Text(sumTaxable.ToString("0.00")).AlignRight());
-                                    // IGST % column left empty in footer
                                     footer.Cell().Element(c => c.Border(0.5f).Padding(4).Text(" ").AlignRight());
                                     footer.Cell().Element(c => c.Border(0.5f).Padding(4).Text(igstTotal.ToString("0.00")).AlignRight());
                                     footer.Cell().Element(c => c.Border(0.5f).Padding(4).Text(sumTotal.ToString("0.00")).AlignRight());

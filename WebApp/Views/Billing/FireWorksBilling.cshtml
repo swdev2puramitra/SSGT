@@ -517,12 +517,12 @@
                                     } catch (e) { }
                                 });
 
-                                // Reassign SlNo so top row shows highest sequence number (descending display)
+                                // Preserve the database SlNo and show the newest/highest
+                                // sequence first while editing an existing bill.
                                 try {
-                                    var totalRows = rowsToAdd.length || 0;
-                                    for (var ri = 0; ri < totalRows; ri++) {
-                                        try { rowsToAdd[ri].slNo = totalRows - ri; } catch (e) { }
-                                    }
+                                    rowsToAdd.sort(function(a, b) {
+                                        return (Number(b.slNo || 0) - Number(a.slNo || 0));
+                                    });
                                 } catch (e) { }
 
                                 try { safeClearTable(t); } catch (e) { }
