@@ -160,7 +160,7 @@ namespace WebApp.Controllers
                         BillId = b.BillId,
                         BillNo = b.BillNo,
                         DispatchStatus = b.DispatchStatus,
-                         TotalBillAmount = b.TotalBillAmount,
+                        TotalBillAmount = b.TotalBillAmount,
                         BillDate = b.BillDate,
                         IsEstimateInvoice = b.IsEstimateInvoice,
                         CustomerType = b.CustomerType,
@@ -172,7 +172,8 @@ namespace WebApp.Controllers
                         PhoneNo = b.PhoneNo,
                         CustomerName = b.CustomerName,
                         CustAddress = b.CustAddress,
-                        CustomerTypeText = b.CustomerTypeText
+                        CustomerTypeText = b.CustomerTypeText,
+                        OrderConfirmed = b.OrderConfirmed
                     });
 
                 var total = await query.CountAsync();
@@ -230,7 +231,7 @@ namespace WebApp.Controllers
                             {
                                 BillId = (long)b.BillId,
                                 b.BillNo,
-                                 TotalBillAmount = b.TotalBillAmount.HasValue && b.TotalBillAmount.Value != 0m
+                                TotalBillAmount = b.TotalBillAmount.HasValue && b.TotalBillAmount.Value != 0m
                                      ? b.TotalBillAmount
                                      : (decimal?)b.BillAmount,
                                 BillDate = b.CreatedDate,
@@ -250,7 +251,7 @@ namespace WebApp.Controllers
                            {
                                BillId = (long)i.BillId,
                                i.BillNo,
-                                TotalBillAmount = i.TotalBillAmount.HasValue && i.TotalBillAmount.Value != 0m
+                               TotalBillAmount = i.TotalBillAmount.HasValue && i.TotalBillAmount.Value != 0m
                                     ? i.TotalBillAmount
                                     : (decimal?)i.BillAmount,
                                BillDate = i.CreatedDate,
