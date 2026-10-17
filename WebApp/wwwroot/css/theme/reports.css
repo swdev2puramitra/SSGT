@@ -14,6 +14,25 @@
     flex-direction: column;
 }
 
+.packing-status {
+    display: inline-block;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.packing-status-complete {
+    color: #35d06f;
+}
+
+.packing-status-partial {
+    color: #9a9a9a;
+}
+
+.packing-status-pending {
+    color: #ef5350;
+}
+
 .dashboard-header {
     margin-bottom: 12px;
     padding-bottom: 10px;
