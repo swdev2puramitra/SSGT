@@ -159,7 +159,7 @@
                     if (typeof value === 'undefined') value = rowData.orderConfirmed ?? rowData.OrderConfirmed ?? rowData.isVerified ?? rowData.IsVerified;
                     var normalizedValue = typeof value === 'string' ? value.toLowerCase() : value;
                     var confirmed = value === true || value === 1 || normalizedValue === 'true' || normalizedValue === '1' || normalizedValue === 'yes';
-                    return confirmed ? '<span class="text-success fw-bold"><i class="fas fa-check-circle"></i> Yes</span>' : '<span class="text-danger fw-bold"><i class="fas fa-times-circle"></i> No</span>';
+                    return confirmed ? '<span class="fw-bold" style="color:#198754 !important"><i class="fas fa-check-circle"></i> Yes</span>' : '<span class="fw-bold" style="color:#dc3545 !important"><i class="fas fa-times-circle"></i> No</span>';
                 }
             },
             {
