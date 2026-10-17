@@ -110,6 +110,7 @@ namespace WebApp.Controllers
                     WayBill = b.WayBill,
                     InvoiceStatus = b.InvoiceStatus,
                     DispatchStatus = b.DispatchStatus,
+                    OrderConfirmed = b.OrderConfirmed,
                     TotalCount = total
                 }).ToList();
 
@@ -197,7 +198,8 @@ namespace WebApp.Controllers
                     WayBill = b.WayBill,
                     InvoiceStatus = b.InvoiceStatus,
                     TotalCount = total,
-                    DispatchStatus = b.DispatchStatus
+                    DispatchStatus = b.DispatchStatus,
+                    OrderConfirmed = b.OrderConfirmed
                 }).ToList();
 
                 return Json(new { success = true, data = items, total = total, page = page, pageSize = pageSize, totalPages = (int)Math.Ceiling((double)total / pageSize) });
@@ -259,7 +261,7 @@ namespace WebApp.Controllers
                                InvoiceNo = i.InvoiceNo,
                                InvoiceStatus = i.InvoiceStatus ?? 0,
                                IsInState = i.IsInState,
-                               IsVerified = (bool?)false,
+                               IsVerified = _context.FwBills.Where(bill => bill.BillId == i.BillId).Select(bill => bill.IsVerified).FirstOrDefault(),
                                DispatchStatus = "C"
                            };
 
@@ -291,6 +293,7 @@ namespace WebApp.Controllers
                         WayBill = b.WayBill,
                         IsInState = b.IsInState,
                         DispatchStatus = billRefx != null ? billRefx.DispatchStatus : null,
+                        OrderConfirmed = billRefx != null ? billRefx.IsVerified : b.IsVerified,
                         InvoiceNo = b.InvoiceNo,
                         InvoiceStatus = b.InvoiceStatus,
                         PhoneNo = c.MobileNo ?? 0,
@@ -300,6 +303,42 @@ namespace WebApp.Controllers
                     };
 
             return q;
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SetOrderConfirmation([FromBody] SetOrderConfirmationRequest request)
+        {
+            try
+            {
+                if (request == null || request.BillId <= 0)
+                    return Json(new { success = false, message = "Invalid bill." });
+
+                var roleValue = User.FindFirst(ClaimTypes.Role)?.Value;
+                int.TryParse(roleValue, out var role);
+                if (role != 1 && role != 2)
+                    return Json(new { success = false, message = "Only administrators can update order confirmation." });
+
+                var bill = await _context.FwBills.FirstOrDefaultAsync(x => x.BillId == request.BillId);
+                if (bill == null)
+                    return Json(new { success = false, message = "Bill not found." });
+
+                bill.IsVerified = request.Confirmed;
+                bill.VerifiedBy = int.TryParse(User.FindFirst("UserId")?.Value, out var userId) ? userId : null;
+                bill.VerifiedDate = request.Confirmed ? DateTime.Now : null;
+                await _context.SaveChangesAsync();
+                return Json(new { success = true, confirmed = bill.IsVerified });
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(User?.FindFirst("UserId")?.Value ?? "Unknown", "HomeController.SetOrderConfirmation", $"BillId={request?.BillId}", ex);
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        public sealed class SetOrderConfirmationRequest
+        {
+            public long BillId { get; set; }
+            public bool Confirmed { get; set; }
         }
     }
 }

@@ -24,6 +24,7 @@
         public string? DispatchStatus { get; set; }
         // When SP returns paged result include total count (COUNT(*) OVER())
         public int TotalCount { get; set; }
+        public bool? OrderConfirmed { get; set; }
     }
 
 }

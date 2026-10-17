@@ -152,12 +152,19 @@
             { title: 'Invoice', field: 'invoiceNo', width: 100 },
             { title: 'Estimate?', field: 'estimate', width: 100 },
             { title: 'WayBill', field: 'wayBill', width: 100 },
+            { title: 'Order Confirmed', field: 'orderConfirmed', width: 125, hozAlign: 'center', formatter: function(cell) {
+                    return cell.getValue() === true ? '<span class="text-success fw-bold"><i class="fas fa-check-circle"></i> Yes</span>' : '<span class="text-danger fw-bold"><i class="fas fa-times-circle"></i> No</span>';
+                } },
             { title: 'Actions', field: 'actions', hozAlign: 'center', width: 150, formatter: function(cell) {
                     var data = cell.getRow().getData();
                     var id = data.billId || '';
                     var buttons = '<div class="d-flex gap-1 justify-content-center">';
                     if(window.CURRENT_USER_ROLE === 1){
                         buttons += '<button class="btn btn-sm btn-info action-edit" data-billid="' + id + '" data-invoiceno="' + (data.invoiceNo || '') + '"><i class="fas fa-edit"></i></button>';
+                    }
+                    if(window.CURRENT_USER_ROLE === 1 || window.CURRENT_USER_ROLE === 2){
+                        var confirmed = data.orderConfirmed === true;
+                        buttons += '<button class="btn btn-sm ' + (confirmed ? 'btn-success' : 'btn-outline-warning') + ' action-order-confirm" data-billid="' + id + '" data-confirmed="' + (!confirmed) + '" title="' + (confirmed ? 'Mark order as not confirmed' : 'Confirm order') + '"><i class="fas fa-clipboard-check"></i></button>';
                     }
                     // Admins can reopen the packing dashboard after dispatch; use an alternate color.
                     var dispatchStatus = (data.DispatchStatus || data.dispatchStatus || '') + '';
@@ -184,7 +191,7 @@
             selector: '#billsGrid',
             ajaxUrl: '@Url.Action("GetBillsPage", "Home")',
             pageSize: 10,
-            initialData: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(bills ?? new List<WebApp.Models.BillsListDto>())),
+            initialData: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(bills ?? new List<WebApp.Models.BillsListDto>(), new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase })),
             totalCount: @((ViewBag.TotalBillsCount ?? 0))
                 };
     </script>
@@ -223,6 +230,23 @@
                         } else {
                             alert('Access denied: only administrators can edit bills.');
                         }
+                        return;
+                    }
+
+                    if(t.classList.contains('action-order-confirm')){
+                        var confirmed = (t.getAttribute('data-confirmed') || 'false').toLowerCase() === 'true';
+                        if(!confirm(confirmed ? 'Confirm this order?' : 'Mark this order as not confirmed?')) return;
+                        fetch('@Url.Action("SetOrderConfirmation", "Home")', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ billId: parseInt(bid, 10), confirmed: confirmed })
+                        }).then(function(r){ return r.json(); }).then(function(res){
+                            if(res && res.success){
+                                var row = window._tabulator_table && window._tabulator_table.getRow(parseInt(bid, 10));
+                                if(row) row.update({ orderConfirmed: !!res.confirmed });
+                                else if(window._tabulator_table) window._tabulator_table.setData(window.TABULATOR_CONFIG.ajaxUrl, {});
+                            } else alert(res && res.message ? res.message : 'Unable to update order confirmation.');
+                        }).catch(function(){ alert('Unable to update order confirmation.'); });
                         return;
                     }
 
