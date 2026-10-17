@@ -202,6 +202,7 @@
             pageSize: 10,
             initialData: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(bills ?? new List<WebApp.Models.BillsListDto>(), new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase })),
             totalCount: @((ViewBag.TotalBillsCount ?? 0))
+        };
     </script>
 
     @Html.Partial("_TabulatorHelper")
