@@ -200,6 +200,11 @@
 
             function updateDispatchStock(row, quantity) {
                 const data = row.getData();
+                quantity = Number(quantity) || 0;
+                if (quantity <= 0) {
+                    row.update({ DispatchStock: '' });
+                    return;
+                }
                 const url = '@Url.Action("GetItemStockDesc", "Reports")'
                     + `?itemId=${encodeURIComponent(data.ItemId)}&quantity=${encodeURIComponent(quantity)}`;
 

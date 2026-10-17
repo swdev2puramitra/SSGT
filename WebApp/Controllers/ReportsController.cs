@@ -142,19 +142,12 @@ namespace WebApp.Controllers
                 // Continue without packing history if table doesn't exist yet
             }
 
-            var dispatchStockDescriptions = new Dictionary<(int ItemId, int Quantity), string>();
+            // Dispatch details describe the quantity being entered in the current
+            // dispatch operation. Do not derive them from the allocation procedure's
+            // existing dispatch value; the browser fetches them after a positive
+            // dispatch quantity is entered.
             foreach (var packingItem in packingData)
-            {
-                var quantity = Math.Max(0, packingItem.DispatchQty ?? 0);
-                var key = (packingItem.ItemId, quantity);
-                if (!dispatchStockDescriptions.TryGetValue(key, out var dispatchStockDescription))
-                {
-                    dispatchStockDescription = GetItemStockDescriptionRequest(_context, key.ItemId, quantity);
-                    dispatchStockDescriptions[key] = dispatchStockDescription;
-                }
-
-                packingItem.DispatchStockDescription = dispatchStockDescription;
-            }
+                packingItem.DispatchStockDescription = string.Empty;
 
             // Get bill header info
             var billNo = packingData.FirstOrDefault()?.BillNo;
