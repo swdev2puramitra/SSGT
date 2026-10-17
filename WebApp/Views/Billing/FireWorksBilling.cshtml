@@ -276,6 +276,10 @@
                         validator: function(cell, value) { return Number.isInteger(Number(value)) && Number(value) >= 1; },
                         formatter: function(cell) { var d = cell.getData(); return (Number(d.quantity || 0)).toString(); }, hozAlign: 'right',
                          cellEdited: function(cell) {
+                             var editedQuantity = Number(cell.getValue()) || 0;
+                             // Keep legacy SellQty synchronized with the edited
+                             // quantity so it cannot overwrite the saved value.
+                             try { cell.getRow().update({ sellQty: editedQuantity }); } catch (e) { }
                              recalcTotals();
                              refreshItemDetail(cell.getRow());
                          }

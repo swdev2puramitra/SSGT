@@ -381,8 +381,8 @@ namespace WebApp.Controllers
                             TypeName = it.ItemType?.TypeName ?? string.Empty,
                             Qty = displayQty,
                             NormalizedQuantity = baseQty,
-                            OriginalEntry = it.SellQty.HasValue && it.SellQty.Value > 0
-                                ? $"{it.SellQty.Value} {it.ItemType?.TypeName ?? "Unit"}'s"
+                            OriginalEntry = it.Quantity > 0
+                                ? $"{it.Quantity} {it.ItemType?.TypeName ?? "Unit"}'s"
                                 : string.Empty,
                             Rate = Math.Round(unitRatePerBase, 2),
                             Discount = invDiscountPercent,
@@ -512,9 +512,10 @@ namespace WebApp.Controllers
                         var unitRatePerBase = (it.ChangedPrice.HasValue && (it.IsPriceModified ?? false))
                             ? it.ChangedPrice.Value
                             : (it.OriginalCost.HasValue ? it.OriginalCost.Value : it.ItemCost);
-                        var normalizedQty = it.SellQty.HasValue && it.SellQty.Value > 0 && it.SellType.HasValue && it.SellType.Value > 0
-                            ? _quantityConversionHelper.ConvertToLowestLevel(it.ItemId, it.SellType.Value, it.SellQty.Value, unitRatePerBase).normalizedQty
-                            : it.Quantity;
+                        // FW_Bills_Items.Quantity is authoritative for estimates.
+                        // SellQty is legacy display metadata and may be stale after
+                        // an estimate quantity edit.
+                        var normalizedQty = it.Quantity;
                         var taxable = Math.Round(normalizedQty * unitRatePerBase, 2, MidpointRounding.AwayFromZero);
 
                         var lineTotal = Math.Round(taxable, 2);
@@ -533,8 +534,8 @@ namespace WebApp.Controllers
                             TypeName = it.ItemType?.TypeName ?? string.Empty,
                             Qty = normalizedQty,
                             NormalizedQuantity = normalizedQty,
-                            OriginalEntry = it.SellQty.HasValue && it.SellQty.Value > 0
-                                ? $"{it.SellQty.Value} {it.ItemType?.TypeName ?? "Unit"}'s"
+                            OriginalEntry = it.Quantity > 0
+                                ? $"{it.Quantity} {it.ItemType?.TypeName ?? "Unit"}'s"
                                 : string.Empty,
                             Rate = Math.Round(unitRatePerBase, 2),
                             // Discount stored at header level as DiscountPerItem (absolute amount). Keep item-level percent 0
@@ -959,9 +960,7 @@ namespace WebApp.Controllers
 
                         var items = itemsTemp.Select(it =>
                         {
-                            var normalizedQuantity = it.sellQty.HasValue && it.sellQty.Value > 0 && it.sellType.HasValue && it.sellType.Value > 0
-                                ? _quantityConversionHelper.ConvertToLowestLevel(it.itemId, it.sellType.Value, it.sellQty.Value, it.itemPrice).normalizedQty
-                                : it.quantity;
+                            var normalizedQuantity = it.quantity;
                             return new
                             {
                                 it.slNo,
@@ -972,8 +971,8 @@ namespace WebApp.Controllers
                                 it.itemTypeId,
                                 it.itemTypeName,
                                 detailed = ItemTypeDescriptionHelper.GetItemTypewiseDescription(_context, it.itemId, normalizedQuantity),
-                                originalEntry = it.sellQty.HasValue && it.sellQty.Value > 0
-                                ? $"{it.sellQty.Value} {it.itemTypeName}'s"
+                                originalEntry = it.quantity > 0
+                                ? $"{it.quantity} {it.itemTypeName}'s"
                                 : string.Empty,
                                 quantity = normalizedQuantity,
                                 it.itemPrice,
@@ -1084,9 +1083,7 @@ namespace WebApp.Controllers
 
                             var items = itemsTemp.Select(it =>
                             {
-                                var normalizedQuantity = it.sellQty.HasValue && it.sellQty.Value > 0 && it.sellType.HasValue && it.sellType.Value > 0
-                                    ? _quantityConversionHelper.ConvertToLowestLevel(it.itemId, it.sellType.Value, it.sellQty.Value, it.itemPrice).normalizedQty
-                                    : it.quantity;
+                                var normalizedQuantity = it.quantity;
                                 return new
                                 {
                                     it.slNo,
@@ -1097,8 +1094,8 @@ namespace WebApp.Controllers
                                     it.itemTypeId,
                                     it.itemTypeName,
                                     detailed = ItemTypeDescriptionHelper.GetItemTypewiseDescription(_context, it.itemId, normalizedQuantity),
-                                    originalEntry = it.sellQty.HasValue && it.sellQty.Value > 0
-                                    ? $"{it.sellQty.Value} {it.itemTypeName}'s"
+                                    originalEntry = it.quantity > 0
+                                    ? $"{it.quantity} {it.itemTypeName}'s"
                                     : string.Empty,
                                     quantity = normalizedQuantity,
                                     it.itemPrice,
@@ -1474,7 +1471,7 @@ namespace WebApp.Controllers
                             itemEntity.ItemTypeId = it.ItemTypeId ?? 0;
                             itemEntity.Quantity = normalizedQty;
                             itemEntity.SellType = it.SellType;
-                            itemEntity.SellQty = it.SellQty;
+                            itemEntity.SellQty = it.SellQty ?? normalizedQty;
                             itemEntity.OriginalCost = originalCost;
                             itemEntity.ChangedPrice = changedPrice;
                             itemEntity.IsPriceModified = isPriceModified;
