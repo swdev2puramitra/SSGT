@@ -1593,9 +1593,14 @@ namespace WebApp.Controllers
                             .AsNoTracking()
                             .Where(item => item.BillId == request.BillId.Value)
                             .ToList();
-                        if (billItems.Count == 0 || billItems.Any(item => item.IsPacked != true))
+                        var packedItemIds = _context.FwPackingHistories.AsNoTracking()
+                            .Where(h => h.BillId == request.BillId.Value && h.QuantityPacked > 0)
+                            .Select(h => h.ItemId)
+                            .Distinct()
+                            .ToHashSet();
+                        if (billItems.Count == 0 || !billItems.Any(item => item.IsPacked == true || packedItemIds.Contains(item.ItemId)))
                         {
-                            return Json(new { success = false, message = "All items must be dispatched/loaded before converting the estimate to an invoice." });
+                            return Json(new { success = false, message = "At least one item must be packed before converting the estimate to an invoice." });
                         }
 
                         // Target an explicitly requested invoice when editing a split invoice.
