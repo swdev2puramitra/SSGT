@@ -161,9 +161,9 @@
                     }
                     // Admins can reopen the packing dashboard after dispatch; use an alternate color.
                     var dispatchStatus = (data.DispatchStatus || data.dispatchStatus || '') + '';
-                    var isDispatched = dispatchStatus === 'D';
+                    var hasDispatchProgress = dispatchStatus === 'P' || dispatchStatus === 'D' || dispatchStatus === 'C';
                     if(window.CURRENT_USER_ROLE === 1 || window.CURRENT_USER_ROLE === 2 || !dispatchStatus || (dispatchStatus !== 'D' && dispatchStatus !== 'C' && dispatchStatus !== 'P')){
-                        buttons += '<button class="btn btn-sm ' + (isDispatched ? 'btn-dispatch-completed' : 'btn-primary') + ' action-dispatch" data-billid="' + id + '" title="' + (isDispatched ? 'Open packing dashboard' : 'Dispatch bill') + '"><i class="fa-solid fa-truck-fast"></i></button>';
+                        buttons += '<button class="btn btn-sm ' + (hasDispatchProgress ? 'btn-dispatch-completed' : 'btn-primary') + ' action-dispatch" data-billid="' + id + '" title="' + (hasDispatchProgress ? 'Open packing dashboard' : 'Dispatch bill') + '"><i class="fa-solid fa-truck-fast"></i></button>';
                     }
                     buttons += '<button class="btn btn-sm btn-secondary action-print" data-billid="' + id + '" data-invoiceno="' + (data.invoiceNo || '') + '"><i class="fas fa-print"></i></button>';
                     var estimateValue = (data.estimate || data.Estimate || '') + '';
@@ -251,7 +251,7 @@
                             return;
                         }
 
-                        if(userRole === 1 && dispatchStatus === 'D'){
+                        if(userRole === 1 && (dispatchStatus === 'P' || dispatchStatus === 'D' || dispatchStatus === 'C')){
                             window.location.href = '/Reports/PackingDashboard?billId=' + numericBillId;
                             return;
                         }
