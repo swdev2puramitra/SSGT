@@ -51,7 +51,10 @@
                 x.TotalDispatchedQty,
                 x.RemainingQty,
                 x.DispatchQty,
-                x.IsPacked
+                x.IsPacked,
+                x.PackedByUserName,
+                x.PackedDateTime,
+                x.QuantityPacked
             }).ToList()
         }).OrderBy(g => g.GodownDescription);
 
@@ -75,7 +78,10 @@
                     DispatchQty = (int?)null,
                     item.RemainingQty,
                     item.TotalDispatchedQty,
-                    item.IsPacked
+                    item.IsPacked,
+                    item.PackedByUserName,
+                    item.PackedDateTime,
+                    item.QuantityPacked
                 }).ToList();
                 var gridId = $"packing-grid-{godown.GodownId}";
                 <div class="godown-section">
@@ -191,12 +197,21 @@
                                 const dispatched = Number(row.TotalDispatchedQty) || 0;
                                 const entered = Number(row.DispatchQty) || 0;
                                 const quantity = dispatched + entered;
-                                const details = String(row.DispatchStock || '').trim();
+                                const packedQuantity = Number(row.QuantityPacked) || dispatched || entered;
+                                const packedBy = row.PackedByUserName || (entered > 0 ? 'Pending save' : 'Unknown');
+                                const packedWhen = row.PackedDateTime
+                                    ? new Date(row.PackedDateTime).toLocaleString()
+                                    : (entered > 0 ? 'Pending save' : 'Unknown');
+                                const stockDetails = String(row.DispatchStock || '').trim();
+                                const details = quantity > 0
+                                    ? `Packed by: ${packedBy}\nWhen: ${packedWhen}\nQuantity: ${packedQuantity}${stockDetails ? `\nDetails: ${stockDetails}` : ''}`
+                                    : '';
                                 const escapedDetails = details
                                     .replace(/&/g, '&amp;')
                                     .replace(/"/g, '&quot;')
                                     .replace(/</g, '&lt;')
-                                    .replace(/>/g, '&gt;');
+                                    .replace(/>/g, '&gt;')
+                                    .replace(/\r?\n/g, '&#10;');
                                 const info = details
                                     ? `<i class="fas fa-info-circle ms-1 text-info" title="${escapedDetails}" aria-label="Dispatch details"></i>`
                                     : '';
