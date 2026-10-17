@@ -33,6 +33,23 @@
     color: #ef5350;
 }
 
+/* Tabulator cell rules set a global text color, so keep packing status colors explicit. */
+.packing-dashboard .packing-status i.text-success {
+    color: #198754 !important;
+}
+
+.packing-dashboard .packing-status i.text-secondary {
+    color: #6c757d !important;
+}
+
+.packing-dashboard .packing-status i.text-danger {
+    color: #dc3545 !important;
+}
+
+.packing-dashboard .packing-status i.text-info {
+    color: #0dcaf0 !important;
+}
+
 .dashboard-header {
     margin-bottom: 12px;
     padding-bottom: 10px;
