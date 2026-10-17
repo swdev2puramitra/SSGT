@@ -152,24 +152,32 @@
             { title: 'Invoice', field: 'invoiceNo', width: 100 },
             { title: 'Estimate?', field: 'estimate', width: 100 },
             { title: 'WayBill', field: 'wayBill', width: 100 },
-            { title: 'Order Confirmed', field: 'orderConfirmed', width: 125, hozAlign: 'center', formatter: function(cell) {
-                    return cell.getValue() === true ? '<span class="text-success fw-bold"><i class="fas fa-check-circle"></i> Yes</span>' : '<span class="text-danger fw-bold"><i class="fas fa-times-circle"></i> No</span>';
-                } },
-            { title: 'Actions', field: 'actions', hozAlign: 'center', width: 150, formatter: function(cell) {
+            {
+                title: 'Order Confirmed', field: 'orderConfirmed', width: 125, hozAlign: 'center', formatter: function(cell) {
+                    var rowData = cell.getRow().getData() || {};
+                    var value = cell.getValue();
+                    if (typeof value === 'undefined') value = rowData.orderConfirmed ?? rowData.OrderConfirmed;
+                    var confirmed = value === true || value === 1 || (typeof value === 'string' && value.toLowerCase() === 'true');
+                    return confirmed ? '<span class="text-success fw-bold"><i class="fas fa-check-circle"></i> Yes</span>' : '<span class="text-danger fw-bold"><i class="fas fa-times-circle"></i> No</span>';
+                }
+            },
+            {
+                title: 'Actions', field: 'actions', hozAlign: 'center', width: 180, formatter: function(cell) {
                     var data = cell.getRow().getData();
                     var id = data.billId || '';
                     var buttons = '<div class="d-flex gap-1 justify-content-center">';
-                    if(window.CURRENT_USER_ROLE === 1){
+                    if (window.CURRENT_USER_ROLE === 1) {
                         buttons += '<button class="btn btn-sm btn-info action-edit" data-billid="' + id + '" data-invoiceno="' + (data.invoiceNo || '') + '"><i class="fas fa-edit"></i></button>';
                     }
-                    if(window.CURRENT_USER_ROLE === 1 || window.CURRENT_USER_ROLE === 2){
-                        var confirmed = data.orderConfirmed === true;
+                    if (window.CURRENT_USER_ROLE === 1 || window.CURRENT_USER_ROLE === 2) {
+                        var confirmedValue = data.orderConfirmed ?? data.OrderConfirmed;
+                        var confirmed = confirmedValue === true || confirmedValue === 1 || (typeof confirmedValue === 'string' && confirmedValue.toLowerCase() === 'true');
                         buttons += '<button class="btn btn-sm ' + (confirmed ? 'btn-success' : 'btn-outline-warning') + ' action-order-confirm" data-billid="' + id + '" data-confirmed="' + (!confirmed) + '" title="' + (confirmed ? 'Mark order as not confirmed' : 'Confirm order') + '"><i class="fas fa-clipboard-check"></i></button>';
                     }
                     // Admins can reopen the packing dashboard after dispatch; use an alternate color.
                     var dispatchStatus = (data.DispatchStatus || data.dispatchStatus || '') + '';
                     var hasDispatchProgress = dispatchStatus === 'P' || dispatchStatus === 'D' || dispatchStatus === 'C';
-                    if(window.CURRENT_USER_ROLE === 1 || window.CURRENT_USER_ROLE === 2 || !dispatchStatus || (dispatchStatus !== 'D' && dispatchStatus !== 'C' && dispatchStatus !== 'P')){
+                    if (window.CURRENT_USER_ROLE === 1 || window.CURRENT_USER_ROLE === 2 || !dispatchStatus || (dispatchStatus !== 'D' && dispatchStatus !== 'C' && dispatchStatus !== 'P')) {
                         buttons += '<button class="btn btn-sm ' + (hasDispatchProgress ? 'btn-dispatch-completed' : 'btn-primary') + ' action-dispatch" data-billid="' + id + '" title="' + (hasDispatchProgress ? 'Open packing dashboard' : 'Dispatch bill') + '"><i class="fa-solid fa-truck-fast"></i></button>';
                     }
                     buttons += '<button class="btn btn-sm btn-secondary action-print" data-billid="' + id + '" data-invoiceno="' + (data.invoiceNo || '') + '"><i class="fas fa-print"></i></button>';
@@ -180,7 +188,8 @@
                     }
                     buttons += '</div>';
                     return buttons;
-                } }
+                }
+            }
         ];
 
         // Expose current user role to client scripts (1 = admin, 2 = semi-admin)
@@ -193,38 +202,37 @@
             pageSize: 10,
             initialData: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(bills ?? new List<WebApp.Models.BillsListDto>(), new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase })),
             totalCount: @((ViewBag.TotalBillsCount ?? 0))
-                };
     </script>
 
     @Html.Partial("_TabulatorHelper")
     <script>
         // View-specific dispatch handling (keeps logic out of shared helper)
-        (function(){
-            function findRowDataByBillId(table, billId){
-                try{
+        (function() {
+            function findRowDataByBillId(table, billId) {
+                try {
                     var rows = table.getRows();
-                    for(var i=0;i<rows.length;i++){
+                    for (var i = 0; i < rows.length; i++) {
                         var d = rows[i].getData();
-                        if(d && (d.BillId == billId || d.billId == billId)) return d;
+                        if (d && (d.BillId == billId || d.billId == billId)) return d;
                     }
-                }catch(e){}
+                } catch (e) { }
                 return null;
             }
 
-            document.addEventListener('DOMContentLoaded', function(){
+            document.addEventListener('DOMContentLoaded', function() {
                 var container = document.querySelector('#billsGrid');
-                if(!container) return;
+                if (!container) return;
 
-                container.addEventListener('click', function(e){
+                container.addEventListener('click', function(e) {
                     var t = e.target;
-                    if(t.tagName === 'I' && t.parentElement) t = t.parentElement;
+                    if (t.tagName === 'I' && t.parentElement) t = t.parentElement;
                     var bid = t.getAttribute && t.getAttribute('data-billid');
-                    if(!bid) return;
+                    if (!bid) return;
 
                     // Handle edit action here (page-specific)
-                    if(t.classList.contains('action-edit')){
+                    if (t.classList.contains('action-edit')) {
                         var userRole = window.CURRENT_USER_ROLE || 0;
-                        if(userRole === 1){
+                        if (userRole === 1) {
                             var invoiceQuery = t.getAttribute('data-invoiceno') ? '&invoiceNo=' + encodeURIComponent(t.getAttribute('data-invoiceno')) : '';
                             window.location.href = '/Billing/FireWorksBilling?billId=' + encodeURIComponent(bid) + invoiceQuery;
                         } else {
@@ -233,80 +241,80 @@
                         return;
                     }
 
-                    if(t.classList.contains('action-order-confirm')){
+                    if (t.classList.contains('action-order-confirm')) {
                         var confirmed = (t.getAttribute('data-confirmed') || 'false').toLowerCase() === 'true';
-                        if(!confirm(confirmed ? 'Confirm this order?' : 'Mark this order as not confirmed?')) return;
+                        if (!confirm(confirmed ? 'Confirm this order?' : 'Mark this order as not confirmed?')) return;
                         fetch('@Url.Action("SetOrderConfirmation", "Home")', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ billId: parseInt(bid, 10), confirmed: confirmed })
-                        }).then(function(r){ return r.json(); }).then(function(res){
-                            if(res && res.success){
+                        }).then(function(r) { return r.json(); }).then(function(res) {
+                            if (res && res.success) {
                                 var row = window._tabulator_table && window._tabulator_table.getRow(parseInt(bid, 10));
-                                if(row) row.update({ orderConfirmed: !!res.confirmed });
-                                else if(window._tabulator_table) window._tabulator_table.setData(window.TABULATOR_CONFIG.ajaxUrl, {});
+                                if (row) row.update({ orderConfirmed: !!res.confirmed });
+                                else if (window._tabulator_table) window._tabulator_table.setData(window.TABULATOR_CONFIG.ajaxUrl, {});
                             } else alert(res && res.message ? res.message : 'Unable to update order confirmation.');
-                        }).catch(function(){ alert('Unable to update order confirmation.'); });
+                        }).catch(function() { alert('Unable to update order confirmation.'); });
                         return;
                     }
 
-                    if(t.classList.contains('action-split')){
+                    if (t.classList.contains('action-split')) {
                         window.location.href = '/Billing/SplitInvoice?invoiceId=' + encodeURIComponent(t.getAttribute('data-invoiceid')) + '&invoiceNo=' + encodeURIComponent(t.getAttribute('data-invoiceno') || '');
                         return;
                     }
 
-                    if(t.classList.contains('action-dispatch')){
+                    if (t.classList.contains('action-dispatch')) {
                         var userRole = window.CURRENT_USER_ROLE || 0;
-                        var numericBillId = parseInt(bid,10);
-                        if(userRole === 2){
+                        var numericBillId = parseInt(bid, 10);
+                        if (userRole === 2) {
                             window.location.href = '/Reports/PackingDashboard?billId=' + encodeURIComponent(numericBillId);
                             return;
                         }
                         var rowData = null;
-                        if(window._tabulator_table) rowData = findRowDataByBillId(window._tabulator_table, numericBillId);
-             
+                        if (window._tabulator_table) rowData = findRowDataByBillId(window._tabulator_table, numericBillId);
+
                         var isEstimate = (rowData && (rowData.IsEstimateInvoice || rowData.isEstimate || rowData.estimate)) || '';
                         var estimateFlag = (isEstimate === 'E' || ('' + isEstimate).toLowerCase() === 'yes');
 
                         var dispatchStatus = (rowData && (rowData.DispatchStatus || rowData.dispatchStatus)) || '';
                         var isInvoiced = !estimateFlag && (('' + isEstimate).toUpperCase() === 'I' || ('' + isEstimate).toLowerCase() === 'no');
-                        if(isInvoiced){
+                        if (isInvoiced) {
                             window.location.href = '/Reports/PackingDashboard?billId=' + numericBillId;
                             return;
                         }
 
-                        if(userRole === 1 && (dispatchStatus === 'P' || dispatchStatus === 'D' || dispatchStatus === 'C')){
+                        if (userRole === 1 && (dispatchStatus === 'P' || dispatchStatus === 'D' || dispatchStatus === 'C')) {
                             window.location.href = '/Reports/PackingDashboard?billId=' + numericBillId;
                             return;
                         }
 
                         // Non-admin behavior remains unchanged for already dispatched/completed bills.
-                        if(dispatchStatus && (dispatchStatus === 'D' || dispatchStatus === 'C')){
+                        if (dispatchStatus && (dispatchStatus === 'D' || dispatchStatus === 'C')) {
                             alert('Bill No: ' + (rowData && (rowData.BillNo || rowData.billNo)) + ' is already dispatched.');
                             return;
                         }
-               
-                        // Admin (role=1) & estimate bills only -> confirm and set DispatchStatus = 'D'
-                        if(userRole === 1 && estimateFlag){
-                            if(!confirm('Confirm dispatch for bill ' + rowData.billNo + '?')) return;
 
-                            fetch('/Reports/SetDispatch',{
+                        // Admin (role=1) & estimate bills only -> confirm and set DispatchStatus = 'D'
+                        if (userRole === 1 && estimateFlag) {
+                            if (!confirm('Confirm dispatch for bill ' + rowData.billNo + '?')) return;
+
+                            fetch('/Reports/SetDispatch', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ BillId: numericBillId, Status: 'D' })
-                            }).then(function(r){ return r.json(); }).then(function(res){
-                                if(res && res.success){
+                            }).then(function(r) { return r.json(); }).then(function(res) {
+                                if (res && res.success) {
                                     alert('Dispatch status updated.');
-                                    try{ window._tabulator_table.setData(window.TABULATOR_CONFIG.ajaxUrl, {}); }catch(e){ location.reload(); }
-                                }else{
+                                    try { window._tabulator_table.setData(window.TABULATOR_CONFIG.ajaxUrl, {}); } catch (e) { location.reload(); }
+                                } else {
                                     alert('Error updating dispatch: ' + (res && res.message ? res.message : 'Unknown'));
                                 }
-                            }).catch(function(err){ console.error(err); alert('Error updating dispatch status'); });
+                            }).catch(function(err) { console.error(err); alert('Error updating dispatch status'); });
 
                             return;
                         }
-                        else if(!estimateFlag){
-                            alert('Bill No: '+rowData.billNo +' is already converted to invoice')
+                        else if (!estimateFlag) {
+                            alert('Bill No: ' + rowData.billNo + ' is already converted to invoice')
                         }
 
                         // Default fallback -> redirect to packing dashboard
@@ -316,38 +324,38 @@
             });
         })();
         // View-specific Print handling: open PreviewPdf with correct template for this page only.
-        (function(){
-            function findRowDataByBillId(table, billId){
-                try{
+        (function() {
+            function findRowDataByBillId(table, billId) {
+                try {
                     var rows = table.getRows();
-                    for(var i=0;i<rows.length;i++){
+                    for (var i = 0; i < rows.length; i++) {
                         var d = rows[i].getData();
-                        if(d && (d.BillId == billId || d.billId == billId)) return d;
+                        if (d && (d.BillId == billId || d.billId == billId)) return d;
                     }
-                }catch(e){}
+                } catch (e) { }
                 return null;
             }
 
-            document.addEventListener('DOMContentLoaded', function(){
+            document.addEventListener('DOMContentLoaded', function() {
                 var container = document.querySelector('#billsGrid');
-                if(!container) return;
+                if (!container) return;
 
-                container.addEventListener('click', function(e){
+                container.addEventListener('click', function(e) {
                     var t = e.target;
-                    if(t.tagName === 'I' && t.parentElement) t = t.parentElement;
+                    if (t.tagName === 'I' && t.parentElement) t = t.parentElement;
                     var bid = t.getAttribute && t.getAttribute('data-billid');
-                    if(!bid) return;
+                    if (!bid) return;
 
-                    if(t.classList.contains('action-print')){
+                    if (t.classList.contains('action-print')) {
                         // Prevent shared helper from handling this click
-                        try{ e.stopImmediatePropagation(); }catch(ex){}
+                        try { e.stopImmediatePropagation(); } catch (ex) { }
 
-                        var numericBillId = parseInt(bid,10);
+                        var numericBillId = parseInt(bid, 10);
                         var rowData = null;
-                        if(window._tabulator_table) rowData = findRowDataByBillId(window._tabulator_table, numericBillId);
+                        if (window._tabulator_table) rowData = findRowDataByBillId(window._tabulator_table, numericBillId);
 
                         var tmpl = 'Estimate';
-                        try{
+                        try {
                             var isEstimate = (rowData && (rowData.IsEstimateInvoice || rowData.isEstimate || rowData.estimate)) || '';
                             var isInState = (rowData && (rowData.IsInState || rowData.isInState)) || false;
                             var custType = (rowData && (rowData.CustomerType || rowData.customerType || rowData.customerTypeText)) || '';
@@ -355,16 +363,16 @@
                             var estimateFlag = (isEstimate === 'E' || (('' + isEstimate).toLowerCase() === 'yes') || isEstimate === true);
                             var inStateFlag = (isInState === true || ('' + isInState).toLowerCase() === 'true');
                             var isRetail = false;
-                            try { if(('' + custType).toLowerCase().indexOf('ret') >= 0) isRetail = true; } catch(e){}
-                            try { if(!isRetail && parseInt(('' + custType)) === 3) isRetail = true; } catch(e){}
+                            try { if (('' + custType).toLowerCase().indexOf('ret') >= 0) isRetail = true; } catch (e) { }
+                            try { if (!isRetail && parseInt(('' + custType)) === 3) isRetail = true; } catch (e) { }
 
-                            if(estimateFlag) tmpl = 'Estimate';
-                            else if(isRetail) tmpl = 'RetailThermal';
+                            if (estimateFlag) tmpl = 'Estimate';
+                            else if (isRetail) tmpl = 'RetailThermal';
                             else tmpl = inStateFlag ? 'InvoiceInState' : 'InvoiceOutOfState';
-                        }catch(e){ tmpl = 'Estimate'; }
+                        } catch (e) { tmpl = 'Estimate'; }
                         var invoiceQuery = t.getAttribute('data-invoiceno') ? '&invoiceNo=' + encodeURIComponent(t.getAttribute('data-invoiceno')) : '';
                         var url = '/Billing/PreviewPdf?billId=' + encodeURIComponent(bid) + invoiceQuery + '&template=' + encodeURIComponent(tmpl);
-                        try { window.open(url, '_blank'); } catch(e) { window.location.href = url; }
+                        try { window.open(url, '_blank'); } catch (e) { window.location.href = url; }
                     }
                 });
             });
