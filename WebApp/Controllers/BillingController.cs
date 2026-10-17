@@ -1140,10 +1140,9 @@ namespace WebApp.Controllers
             {
                 if (!request.IsEstimate &&
                     (string.IsNullOrWhiteSpace(request.OwnerName) ||
-                     string.IsNullOrWhiteSpace(request.VehicleNo) ||
-                     string.IsNullOrWhiteSpace(request.EWayBillNo)))
+                     string.IsNullOrWhiteSpace(request.VehicleNo)))
                 {
-                    return Json(new { success = false, message = "Owner / Driver Name, Vehicle No, and E-Way Bill No are required for an invoice." });
+                    return Json(new { success = false, message = "Owner / Driver Name and Vehicle No are required for an invoice." });
                 }
 
                 var currentUserIdClaim = User.FindFirst("UserId")?.Value;
