@@ -136,15 +136,21 @@
                 const table = new Tabulator(gridElement, {
                     data: rows,
                     layout: 'fitColumns',
-                    responsiveLayout: 'hide',
+                    responsiveLayout: 'collapse',
+                    columnDefaults: {
+                        resizable: false,
+                        headerWordWrap: true,
+                        minWidth: 0,
+                        vertAlign: 'middle'
+                    },
                     columnCalcs: 'bottom',
                     columns: [
-                        { title: 'Sl', field: 'SlNo', hozAlign: 'center', width: 60 },
-                        { title: 'Item Name', field: 'ItemName', widthGrow: 2 },
-                        { title: 'Details', field: 'Stock', widthGrow: 1, hozAlign: 'left' },
-                        { title: 'Allocated', field: 'AllocatedQty', hozAlign: 'right', bottomCalc: 'sum' },
+                        { title: 'Sl', field: 'SlNo', hozAlign: 'center', width: 52 },
+                        { title: 'Item Name', field: 'ItemName', width: 240, hozAlign: 'left' },
+                        { title: 'Allocated Details', field: 'Stock', width: 250, hozAlign: 'left' },
+                        { title: 'Allocated', field: 'AllocatedQty', hozAlign: 'right', width: 105, bottomCalc: 'sum' },
                         {
-                            title: 'Dispatch', field: 'DispatchQty', hozAlign: 'right', bottomCalc: 'sum',
+                            title: 'Dispatch', field: 'DispatchQty', hozAlign: 'right', width: 105, bottomCalc: 'sum',
                             editor: @role == 1 ? false : 'number',
                             editable: function (cell) {
                                 const row = cell.getRow().getData();
@@ -164,9 +170,9 @@
                                 updateGodownSummary(gridElement, table);
                             }
                         },
-                            { title: 'Dispatch Details', field: 'DispatchStock', widthGrow: 1, hozAlign: 'left' },
+                            { title: 'Dispatch Details', field: 'DispatchStock', width: 240, hozAlign: 'left' },
                         {
-                            title: 'Remaining', field: 'RemainingQty', hozAlign: 'right', bottomCalc: 'sum',
+                            title: 'Remaining', field: 'RemainingQty', hozAlign: 'right', width: 105, bottomCalc: 'sum',
                             formatter: function (cell) {
                                 const row = cell.getRow().getData();
                                 const allocated = Number(row.AllocatedQty) || 0;
@@ -176,7 +182,7 @@
                                 return Math.max(0, allocated - totalDispatched - dispatchQty);
                             }
                         },
-                        { title: 'Total Dispatched', field: 'TotalDispatchedQty', hozAlign: 'right' }
+                        { title: 'Total Dispatched', field: 'TotalDispatchedQty', hozAlign: 'right', width: 130 }
                     ]
                 });
                 gridElement._packingTable = table;
