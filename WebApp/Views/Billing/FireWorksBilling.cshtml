@@ -271,12 +271,23 @@
                     // store quantity in the grid as lowest-level/base units (not per-type units)
                     {
                         title: 'Quantity', field: 'quantity', width: 100, headerSort: false,
-                        editable: function(cell) { return !(cell.getRow().getData() || {}).isPacked; },
+                        editable: function(cell) { return true; },
                         editor: 'number', editorParams: { min: 1, step: 1 },
-                        validator: function(cell, value) { return Number.isInteger(Number(value)) && Number(value) >= 1; },
+                        validator: function(cell, value) {
+                            var data = cell.getRow().getData() || {};
+                            var packedQuantity = Number(data.packedQuantity || 0) || 0;
+                            return Number.isInteger(Number(value)) && Number(value) >= Math.max(1, packedQuantity);
+                        },
                         formatter: function(cell) { var d = cell.getData(); return (Number(d.quantity || 0)).toString(); }, hozAlign: 'right',
                          cellEdited: function(cell) {
                              var editedQuantity = Number(cell.getValue()) || 0;
+                             var rowData = cell.getRow().getData() || {};
+                             var packedQuantity = Number(rowData.packedQuantity || 0) || 0;
+                             if (editedQuantity < packedQuantity) {
+                                 showMessage('Quantity cannot be less than the quantity already packed (' + packedQuantity + ').');
+                                 cell.setValue(rowData.quantity || packedQuantity, true);
+                                 return;
+                             }
                              // Keep legacy SellQty synchronized with the edited
                              // quantity so it cannot overwrite the saved value.
                              try { cell.getRow().update({ sellQty: editedQuantity }); } catch (e) { }
@@ -313,7 +324,7 @@
                         title: 'Delete', formatter: function(cell) {
                             try {
                                 var data = (cell && cell.getRow && cell.getRow().getData) ? cell.getRow().getData() : {};
-                                if (data && data.isPacked === true) {
+                                if (data && (data.isPacked === true || Number(data.packedQuantity || 0) > 0)) {
                                     // render a disabled control for packed rows
                                     return '<button class="btn btn-sm btn-danger" disabled title="Packed items cannot be deleted">Del</button>';
                                 }
@@ -322,7 +333,7 @@
                         }, width: 80, cellClick: function(e, cell) {
                             try {
                                 var data = (cell && cell.getRow && cell.getRow().getData) ? cell.getRow().getData() : {};
-                                if (data && data.isPacked === true) {
+                                if (data && (data.isPacked === true || Number(data.packedQuantity || 0) > 0)) {
                                     try {
                                         var nm = (data.itemName || data.itemCode) ? (data.itemName || data.itemCode) : 'item';
                                         showMessage('Packed item "' + nm + '" cannot be deleted. Unpack the item before making changes.');
@@ -475,6 +486,8 @@
                                             itemTypeName: it.itemTypeName || it.itemType || '',
                                             detailed: it.detailed || '',
                                             quantity: it.quantity || 0,
+                                            packedQuantity: Number(it.packedQuantity || 0) || 0,
+                                            isPacked: !!it.isPacked || Number(it.packedQuantity || 0) >= Number(it.quantity || 0),
                                             qtyPerType: it.qtyPerType || 1,
                                             itemPrice: it.itemPrice || it.originalCost || 0,
                                              itemCost: it.itemPrice || it.originalCost || 0,
@@ -1156,7 +1169,7 @@
                                     // Prevent updating packed rows
                                     try {
                                         var exData = existingRow.getData() || {};
-                                        if (exData.isPacked === true) {
+                                        if (exData.isPacked === true || Number(exData.packedQuantity || 0) > 0) {
                                             try {
                                                 var nm = (exData.itemName || exData.itemCode) ? (exData.itemName || exData.itemCode) : 'item';
                                                 showMessage('Packed item "' + nm + '" cannot be modified. Unpack the item before making changes.');
@@ -1215,7 +1228,7 @@
                                             try {
                                                 // prevent updating or removing packed rows
                                                 var otherData = other.getData() || {};
-                                                if (otherData.isPacked === true) {
+                                                if (otherData.isPacked === true || Number(otherData.packedQuantity || 0) > 0) {
                                                     try {
                                                         var onm = (otherData.itemName || otherData.itemCode) ? (otherData.itemName || otherData.itemCode) : 'item';
                                                         showMessage('Packed item "' + onm + '" cannot be modified or merged.');
@@ -1345,7 +1358,7 @@
                                         for (var i = 1; i < matches.length; i++) {
                                             try {
                                                 var md = matches[i].getData() || {};
-                                                if (md.isPacked === true) {
+                                                if (md.isPacked === true || Number(md.packedQuantity || 0) > 0) {
                                                     try {
                                                         var mn = (md.itemName || md.itemCode) ? (md.itemName || md.itemCode) : 'item';
                                                         showMessage('Packed item "' + mn + '" cannot be deleted as part of merge.');

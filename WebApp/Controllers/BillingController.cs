@@ -946,6 +946,11 @@ namespace WebApp.Controllers
                                 originalCost = it.OriginalCost
                             }).ToList();
 
+                        var packedQuantities = _context.FwPackingHistories.AsNoTracking()
+                            .Where(h => h.BillId == invoice.BillId)
+                            .GroupBy(h => h.ItemId)
+                            .ToDictionary(g => g.Key, g => g.Sum(h => h.QuantityPacked));
+
                         // Resolve HSN codes via master items -> master HSN to avoid EF navigation pitfalls
                         var invoiceItemIds = itemsTemp.Select(i => i.itemId).Distinct().ToList();
                         var invItemsData = _context.FwMasterItems.AsNoTracking()
@@ -984,6 +989,7 @@ namespace WebApp.Controllers
                                 it.isPriceModified,
                                 it.sellType,
                                 it.sellQty,
+                                packedQuantity = packedQuantities.TryGetValue(it.itemId, out var packedQty) ? packedQty : 0,
                                 hsnCode = itemToHsnLookup.ContainsKey(it.itemId) ? itemToHsnLookup[it.itemId] : string.Empty,
                                 it.originalCost
                             };
@@ -1081,6 +1087,11 @@ namespace WebApp.Controllers
                                     originalCost = it.OriginalCost
                                 }).ToList();
 
+                            var packedQuantities = _context.FwPackingHistories.AsNoTracking()
+                                .Where(h => h.BillId == bill.BillId)
+                                .GroupBy(h => h.ItemId)
+                                .ToDictionary(g => g.Key, g => g.Sum(h => h.QuantityPacked));
+
                             var items = itemsTemp.Select(it =>
                             {
                                 var normalizedQuantity = it.quantity;
@@ -1107,6 +1118,7 @@ namespace WebApp.Controllers
                                     it.isPriceModified,
                                     it.sellType,
                                     it.sellQty,
+                                    packedQuantity = packedQuantities.TryGetValue(it.itemId, out var packedQty) ? packedQty : 0,
                                     it.hsnCode,
                                     it.originalCost
                                 };
@@ -1297,6 +1309,47 @@ namespace WebApp.Controllers
                         System.Diagnostics.Debug.WriteLine($"Error resolving customer: {ex.Message}");
                         // proceed with resolvedCustomerId = 0
                     }
+
+                    // Packing is recorded against the source bill. Once any quantity
+                    // has been packed, an edit may increase the line quantity but may
+                    // not remove the line or reduce it below the packed quantity.
+                    long? packedBillId = request.BillId.HasValue && request.BillId.Value > 0
+                        ? request.BillId.Value
+                        : null;
+                    if (request.InvoiceId.HasValue && request.InvoiceId.Value > 0)
+                    {
+                        packedBillId = _context.FwInvoices.AsNoTracking()
+                            .Where(i => i.InvoiceId == request.InvoiceId.Value)
+                            .Select(i => (long?)i.BillId)
+                            .FirstOrDefault() ?? packedBillId;
+                    }
+                    if (packedBillId.HasValue && packedBillId.Value > 0)
+                    {
+                        var packedByItem = _context.FwPackingHistories.AsNoTracking()
+                            .Where(h => h.BillId == packedBillId.Value)
+                            .GroupBy(h => h.ItemId)
+                            .Select(g => new { ItemId = g.Key, Quantity = g.Sum(h => h.QuantityPacked) })
+                            .Where(x => x.Quantity > 0)
+                            .ToList();
+                        foreach (var packed in packedByItem)
+                        {
+                            var requested = (request.Items ?? new List<WebApp.Models.Dto.FireWorksBillingItemDto>())
+                                .FirstOrDefault(i => i != null && i.ItemId == packed.ItemId);
+                            if (requested == null || requested.Quantity < packed.Quantity)
+                            {
+                                tx.Rollback();
+                                var itemName = _context.FwMasterItems.AsNoTracking()
+                                    .Where(i => i.ItemId == packed.ItemId)
+                                    .Select(i => i.ItemName)
+                                    .FirstOrDefault();
+                                return Json(new
+                                {
+                                    success = false,
+                                    message = $"Cannot remove or reduce packed item{(string.IsNullOrWhiteSpace(itemName) ? string.Empty : $" '{itemName}'")}. Minimum quantity is {packed.Quantity}."
+                                });
+                            }
+                        }
+                    }
                     if (request.IsEstimate)
                     {
                         // FW_Bills (estimates)
@@ -1320,68 +1373,8 @@ namespace WebApp.Controllers
                                 return Json(new { success = false, message = "Estimate not found for edit" });
                             }
 
-                            // remove existing items - we'll re-add
-
-                            if (billEntity.FwBillsItems != null && billEntity.FwBillsItems.Any())
-                            {
-                                // Prevent deletion/modification of packed items: if any existing item is packed and not present unchanged in request, reject
-                                var packedExisting = billEntity.FwBillsItems.Where(x => x.IsPacked == true).ToList();
-                                if (packedExisting.Any())
-                                {
-                                    // Only warn/reject when Quantity or Price (ItemCost) changes for packed items.
-                                    // Build a set of preserved packed keys (ItemId:ItemTypeId:Quantity:ItemCost) for which there is
-                                    // a matching request row with identical Quantity and computed ItemCost. Any packed item that
-                                    // is missing or has different Quantity/ItemCost will cause a rejection.
-                                    preservedPackedKeys.Clear();
-                                    var requestItems = (request.Items ?? new System.Collections.Generic.List<WebApp.Models.Dto.FireWorksBillingItemDto>()).Where(r => r != null).ToList();
-
-                                    foreach (var p in packedExisting)
-                                    {
-                                        // find matching request rows by ItemId and ItemTypeId
-                                        var matches = requestItems.Where(rit => rit.ItemId == p.ItemId && (rit.ItemTypeId ?? 0) == p.ItemTypeId).ToList();
-                                        if (!matches.Any())
-                                        {
-                                            // item removed entirely => treated as quantity change => reject
-                                            string? itemName = null;
-                                            try { itemName = p.Item?.ItemName ?? _context.FwMasterItems.AsNoTracking().FirstOrDefault(m => m.ItemId == p.ItemId)?.ItemName; } catch { }
-                                            var msg = !string.IsNullOrWhiteSpace(itemName) ? $"Cannot modify or delete packed item: {itemName}." : $"Cannot modify or delete packed item (ItemId: {p.ItemId}).";
-                                            tx.Rollback();
-                                            return Json(new { success = false, message = msg });
-                                        }
-
-                                        // Check if any matching request row preserves Quantity and ItemCost (price)
-                                        var matchedPreserve = false;
-                                        foreach (var rit in matches)
-                                        {
-                                            // compute request item cost using same rules as persistence: ChangedPrice if provided, otherwise OriginalCost or ItemPrice
-                                            decimal? changedPrice = rit.ChangedPrice != null ? rit.ChangedPrice : null;
-                                            decimal originalCost = rit.OriginalCost ?? (rit.ItemPrice ?? 0m);
-                                            bool isPriceModified = changedPrice.HasValue;
-                                            decimal reqItemCost = isPriceModified ? changedPrice.Value : originalCost;
-
-                                            // Compare quantity and price (rounded to 2 decimals) to tolerate minor differences
-                                            if (rit.Quantity == p.Quantity && Decimal.Round(reqItemCost, 2) == Decimal.Round(p.ItemCost, 2))
-                                            {
-                                                var key = $"{p.ItemId}:{p.ItemTypeId}:{p.Quantity}:{Decimal.Round(p.ItemCost, 2)}";
-                                                preservedPackedKeys.Add(key);
-                                                matchedPreserve = true;
-                                                break;
-                                            }
-                                        }
-
-                                        if (!matchedPreserve)
-                                        {
-                                            // Quantity or price changed for this packed item => reject
-                                            string? itemName = null;
-                                            try { itemName = p.Item?.ItemName ?? _context.FwMasterItems.AsNoTracking().FirstOrDefault(m => m.ItemId == p.ItemId)?.ItemName; } catch { }
-                                            var msg = !string.IsNullOrWhiteSpace(itemName) ? $"Cannot modify Quantity or Price of packed item: {itemName}." : $"Cannot modify Quantity or Price of packed item (ItemId: {p.ItemId}).";
-                                            tx.Rollback();
-                                            return Json(new { success = false, message = msg });
-                                        }
-                                    }
-                                }
-
-                            }
+                            // Existing packing history is validated above. Rebuild the
+                            // bill items while preserving the packed quantity rule.
 
                             billEntity.ModifiedBy = currentUserId;
                             billEntity.ModifiedDate = DateTime.Now;
