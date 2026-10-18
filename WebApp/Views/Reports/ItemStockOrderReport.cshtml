@@ -48,6 +48,7 @@
             totalCount: @rows.Count
         };
     </script>
+    @* Report-specific initializer retained for reference; the shared helper below is active.
     <script>
         (function () {
             function initializeReportGrid() {
@@ -78,4 +79,6 @@
             }
         })();
     </script>
+    *@
+    @Html.Partial("_TabulatorHelper")
 }

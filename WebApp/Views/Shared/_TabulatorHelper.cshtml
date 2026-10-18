@@ -30,22 +30,30 @@
                 columns: cols,
                 pagination: cfg.paginationMode || (ajaxUrl ? 'remote' : 'local'),
                 paginationSize: pageSize,
-                ajaxURL: ajaxUrl,
-                ajaxConfig: 'GET',
-                ajaxParams: getFilterParams,
                 paginationDataSent: { page: 'page', pageSize: 'pageSize' },
                 paginationDataReceived: { data: 'data', last_page: 'totalPages', page: 'page' },
                 placeholder: 'No records found',
-                layoutColumnsOnNewData: true,
-                ajaxResponse: function(url, params, response){
+                layoutColumnsOnNewData: true
+            };
+
+            // Local grids must receive their data during construction. Supplying an
+            // AJAX URL (or AJAX response handler) without an endpoint can prevent
+            // Tabulator from rendering the initial rows.
+            if(ajaxUrl){
+                options.ajaxURL = ajaxUrl;
+                options.ajaxConfig = 'GET';
+                options.ajaxParams = getFilterParams;
+                options.ajaxResponse = function(url, params, response){
                     if(response && response.total !== undefined){
                         var el = document.getElementById('resultsInfo');
                         if(el) el.innerHTML = 'Found <strong>' + response.total + '</strong> bill(s)';
                     }
                     return (response && response.data) ? response.data : [];
-                },
-                ajaxError: function(xhr, status, err){ console.error('Tabulator AJAX error', status, err); }
-            };
+                };
+                options.ajaxError = function(xhr, status, err){ console.error('Tabulator AJAX error', status, err); };
+            } else if(initialData && initialData.length){
+                options.data = initialData;
+            }
 
             // Create the grid via shared TabulatorHelper
             TabulatorHelper.createTabulator(selector, options).then(function(table){
@@ -54,7 +62,7 @@
 
                 // If initial data provided by server, load it immediately
                 try{
-                    if(initialData && initialData.length > 0){
+                    if(initialData && initialData.length > 0 && !ajaxUrl){
                         table.setData(initialData);
                         var el = document.getElementById('resultsInfo');
                         if(el) el.innerHTML = 'Found <strong>' + totalCount + '</strong> bill(s)';
