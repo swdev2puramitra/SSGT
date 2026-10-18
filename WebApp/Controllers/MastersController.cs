@@ -375,7 +375,11 @@ public sealed class MastersController : BaseController
             {
                 Id = item.ItemId,
                 Label = item.ItemName + " (" + item.ItemCode + ")",
-                Value = item.ItemName
+                Value = item.ItemName,
+                StockQuantity = _context.FwStocks
+                    .Where(stock => stock.ItemId == item.ItemId)
+                    .Select(stock => (int?)stock.Quantity)
+                    .Sum() ?? 0
             })
             .ToListAsync(cancellationToken);
 

@@ -312,7 +312,7 @@
                             var option = document.createElement('button');
                             option.type = 'button';
                             option.setAttribute('role', 'option');
-                            option.className = 'stock-autocomplete-option';
+                            option.className = 'stock-autocomplete-option ' + window.itemAutocompleteStatusClass(item);
                             option.textContent = item.itemName + (item.itemCode ? ' (' + item.itemCode + ')' : '');
                             option.addEventListener('click', function() {
                                 input.value = item.itemCode || item.itemName;

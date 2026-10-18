@@ -2180,7 +2180,33 @@ namespace WebApp.Controllers
                     items = items.Where(i => itemIdsInGodown.Contains(i.ItemId)).ToList();
                 }
 
-                return Json(new { success = true, data = items });
+                var itemIds = items.Select(i => i.ItemId).Distinct().ToArray();
+                var stockRows = await _context.FwStocks
+                    .Where(stock => itemIds.Contains(stock.ItemId) &&
+                                    (!godownId.HasValue || stock.GodownId == godownId.Value))
+                    .GroupBy(stock => stock.ItemId)
+                    .Select(group => new { ItemId = group.Key, Quantity = group.Sum(stock => stock.Quantity) })
+                    .ToDictionaryAsync(row => row.ItemId, row => row.Quantity);
+
+                return Json(new
+                {
+                    success = true,
+                    data = items.Select(item => new
+                    {
+                        item.SlNo,
+                        item.ItemId,
+                        item.ItemCode,
+                        item.ItemName,
+                        item.ItemType,
+                        item.TypeName,
+                        item.ItemPrice,
+                        item.StockPosition,
+                        item.CGST,
+                        item.SGST,
+                        item.IGST,
+                        StockQuantity = stockRows.TryGetValue(item.ItemId, out var quantity) ? quantity : 0
+                    })
+                });
             }
             catch (Exception ex)
             {

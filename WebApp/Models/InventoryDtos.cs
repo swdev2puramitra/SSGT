@@ -54,6 +54,8 @@ public sealed class InventoryAutocompleteOptionDto
     public string Label { get; set; } = string.Empty;
 
     public string Value { get; set; } = string.Empty;
+
+    public int StockQuantity { get; set; }
 }
 
 public sealed class InventoryGridResponseDto

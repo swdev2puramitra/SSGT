@@ -110,6 +110,7 @@
                         (options || []).forEach(function (option) {
                             var button = document.createElement('button');
                             button.type = 'button';
+                            button.className = window.itemAutocompleteStatusClass(option);
                             button.textContent = option.label || option.Label || '';
                             button.addEventListener('mousedown', function (event) {
                                 event.preventDefault();

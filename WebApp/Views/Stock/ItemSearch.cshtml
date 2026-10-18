@@ -55,6 +55,9 @@
         color: #111827 !important;
         outline: none;
     }
+    .item-search-option.item-stock-empty { background: #dc3545 !important; color: #fff !important; }
+    .item-search-option.item-stock-low { background: #ffc107 !important; color: #212529 !important; }
+    .item-search-option.item-stock-available { background: #198754 !important; color: #fff !important; }
 </style>
 
 @section Scripts {
@@ -166,7 +169,7 @@
                             (options || []).forEach(function(option) {
                                 var button = document.createElement('button');
                                 button.type = 'button';
-                                button.className = 'item-search-option';
+                    button.className = 'item-search-option ' + window.itemAutocompleteStatusClass(option);
                                 button.setAttribute('role', 'option');
                                 button.textContent = option.label;
                                 button.addEventListener('click', function() {

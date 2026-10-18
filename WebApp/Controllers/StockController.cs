@@ -230,7 +230,11 @@ namespace WebApp.Controllers
                                      {
                                          item.ItemId,
                                          item.ItemName,
-                                         item.ItemCode
+                                         item.ItemCode,
+                                         StockQuantity = _context.FwStocks
+                                             .Where(row => row.GodownId == godownId && row.ItemId == item.ItemId)
+                                             .Select(row => (int?)row.Quantity)
+                                             .Sum() ?? 0
                                      })
                 .Distinct()
                 .Take(10)

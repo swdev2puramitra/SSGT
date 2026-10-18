@@ -51,7 +51,7 @@
 
     function autocomplete(input, idInput, url, options) {
         const settings = options || {};
-        $(input).autocomplete({
+        var widget = $(input).autocomplete({
             minLength: settings.minLength ?? 0,
             delay: 200,
             source: function (request, respond) {
@@ -74,6 +74,15 @@
                 if (!ui.item) idInput.value = '';
             }
         });
+
+        if (settings.stockAware) {
+            var instance = widget.autocomplete('instance');
+            if (instance) {
+                instance._renderItem = function (ul, item) {
+                    return window.renderStockAutocompleteItem(ul, item, item.label || item.value);
+                };
+            }
+        }
 
         input.addEventListener('input', function () {
             idInput.value = '';
@@ -287,7 +296,7 @@
     }
 
     function initialize() {
-        autocomplete(itemInput, itemIdInput, urls.items, { minLength: 2 });
+        autocomplete(itemInput, itemIdInput, urls.items, { minLength: 2, stockAware: true });
         autocomplete(companyInput, companyIdInput, urls.companies);
         autocomplete(categoryInput, categoryIdInput, urls.categories, {
             onSelect: function () {

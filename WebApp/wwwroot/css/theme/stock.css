@@ -44,6 +44,11 @@
     outline: none;
 }
 
+/* Item autocomplete stock availability states. */
+.item-stock-empty { background-color: #dc3545 !important; color: #fff !important; }
+.item-stock-low { background-color: #ffc107 !important; color: #212529 !important; }
+.item-stock-available { background-color: #198754 !important; color: #fff !important; }
+
 .stock-autocomplete {
     appearance: none !important;
     -webkit-appearance: none !important;

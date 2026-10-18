@@ -175,7 +175,7 @@
             (result || []).forEach(function (option) {
                 var button = document.createElement('button');
                 button.type = 'button';
-                button.className = 'btn btn-link text-start w-100 p-1';
+                button.className = 'btn btn-link text-start w-100 p-1 ' + window.itemAutocompleteStatusClass(option);
                 button.textContent = option.label || getItemLabel(option);
                 button.addEventListener('mousedown', function (event) {
                     event.preventDefault();

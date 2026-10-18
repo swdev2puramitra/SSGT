@@ -906,7 +906,8 @@
                                 : (i.itemPrice !== undefined) ? i.itemPrice
                                     : 0;
                             var priceText = (price !== null && price !== undefined && !isNaN(Number(price))) ? (' \u20B9' + Number(price).toFixed(2)) : '';
-                            return { label: (code || '') + (name ? ' - ' + name : '') + (priceText ? ' · ' + priceText : ''), value: code || name, item: i };
+                            var stockQuantity = i.StockQuantity !== undefined ? i.StockQuantity : (i.stockQuantity !== undefined ? i.stockQuantity : 0);
+                            return { label: (code || '') + (name ? ' - ' + name : '') + (priceText ? ' · ' + priceText : ''), value: code || name, item: i, stockQuantity: stockQuantity };
                         });
                         response(items);
                     }).catch(function() { response([]); });
@@ -949,6 +950,12 @@
                     return false;
                 }
             });
+            var itemAutocomplete = $("#itemSearch").autocomplete('instance');
+            if (itemAutocomplete) {
+                itemAutocomplete._renderItem = function(ul, item) {
+                    return window.renderStockAutocompleteItem(ul, item, item.label || item.value);
+                };
+            }
 
             // Allow typed codes or names to resolve on blur/change as well.
             $("#itemSearch").on('input', function() {

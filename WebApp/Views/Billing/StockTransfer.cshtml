@@ -132,7 +132,7 @@
                                         var fromGodown = document.getElementById('fromGodown').value;
                                         fetch('@Url.Action("GetItems", "Billing")?q=' + encodeURIComponent(request.term)+"&godownId="+fromGodown).then(function(r) { return r.json(); }).then(function(resp) {
                                             var items = (resp && resp.success) ? (resp.data || []) : [];
-                                            response(items.map(function(it) { return { label: (it.itemName || '') + ' · ' + (it.itemCode || ''), value: it.itemName, itemId: it.itemId, itemPrice: (it.itemPrice || it.ItemPrice || 0) }; }));
+                                            response(items.map(function(it) { return { label: (it.itemName || '') + ' · ' + (it.itemCode || ''), value: it.itemName, itemId: it.itemId, itemPrice: (it.itemPrice || it.ItemPrice || 0), stockQuantity: it.stockQuantity || it.StockQuantity || 0 }; }));
                                         }).catch(function() { response([]); });
                                     },
                                     minLength: 1,
@@ -152,6 +152,10 @@
                                         } catch (e) { console.warn('autocomplete select failed', e); }
                                     }
                                 });
+                                var stockAutocomplete = $(input).autocomplete('instance');
+                                if (stockAutocomplete) stockAutocomplete._renderItem = function(ul, item) {
+                                    return window.renderStockAutocompleteItem(ul, item, item.label || item.value);
+                                };
                             });
 
                             input.addEventListener('blur', function() {
@@ -247,7 +251,7 @@
                             source: function(request, response) {
                                 fetch('@Url.Action("GetItems", "Billing")?q=' + encodeURIComponent(request.term)).then(r => r.json()).then(function(resp) {
                                     var items = (resp && resp.success) ? (resp.data || []) : [];
-                                    response(items.map(function(it) { return { label: (it.itemName || '') + ' · ' + (it.itemCode || ''), value: it.itemName, itemId: it.itemId, itemPrice: it.itemPrice }; }));
+                                    response(items.map(function(it) { return { label: (it.itemName || '') + ' · ' + (it.itemCode || ''), value: it.itemName, itemId: it.itemId, itemPrice: it.itemPrice, stockQuantity: it.stockQuantity || it.StockQuantity || 0 }; }));
                                 }).catch(function() { response([]); });
                             },
                             minLength: 1,
@@ -265,6 +269,10 @@
                                 }).catch(function() { rowItemTypes[ui.item.itemId] = []; });
                             }
                         });
+                        var stockAutocomplete = $inp.autocomplete('instance');
+                        if (stockAutocomplete) stockAutocomplete._renderItem = function(ul, item) {
+                            return window.renderStockAutocompleteItem(ul, item, item.label || item.value);
+                        };
                     } catch (e) { /* ignore */ }
                 }
             }).then(function(table) {
