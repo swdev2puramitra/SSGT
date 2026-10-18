@@ -179,29 +179,15 @@ namespace WebApp.Controllers
                     .Select(g => new { ItemId = g.Key, Quantity = g.Sum(x => x.Quantity) })
                     .ToDictionaryAsync(x => x.ItemId, x => x.Quantity);
 
-                // Unconverted estimates are sourced from FW_Bills_Items. Converted
-                // estimates are represented by FW_Invoice_Items, so they are counted
-                // once through the invoice and never double-counted from the bill.
-                var openEstimateBillIds = await _context.FwBills.AsNoTracking()
-                    .Where(x => x.IsEstimateInvoice == "E")
-                    .Select(x => x.BillId)
-                    .ToListAsync();
+                // Ordered quantities for this report are limited to bill items that
+                // have been packed. Invoice rows are intentionally excluded.
                 var estimateOrders = await _context.FwBillsItems.AsNoTracking()
-                    .Where(x => openEstimateBillIds.Contains(x.BillId))
-                    .GroupBy(x => x.ItemId)
-                    .Select(g => new { ItemId = g.Key, Quantity = g.Sum(x => x.Quantity) })
-                    .ToListAsync();
-                var invoiceIds = await _context.FwInvoices.AsNoTracking()
-                    .Where(x => x.IsEstimateInvoice == "I")
-                    .Select(x => x.InvoiceId)
-                    .ToListAsync();
-                var invoiceOrders = await _context.FwInvoiceItems.AsNoTracking()
-                    .Where(x => invoiceIds.Contains(x.InvoiceId))
+                    .Where(x => x.IsPacked == true)
                     .GroupBy(x => x.ItemId)
                     .Select(g => new { ItemId = g.Key, Quantity = g.Sum(x => x.Quantity) })
                     .ToListAsync();
 
-                var orderedByItem = estimateOrders.Concat(invoiceOrders)
+                var orderedByItem = estimateOrders
                     .GroupBy(x => x.ItemId)
                     .ToDictionary(g => g.Key, g => g.Sum(x => x.Quantity));
                 var itemIds = stockByItem.Keys.Concat(orderedByItem.Keys).Distinct().ToList();
