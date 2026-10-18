@@ -48,5 +48,34 @@
             totalCount: @rows.Count
         };
     </script>
-    @Html.Partial("_TabulatorHelper")
+    <script>
+        (function () {
+            function initializeReportGrid() {
+                var config = window.TABULATOR_CONFIG || {};
+                var container = document.querySelector(config.selector || '#itemStockOrderGrid');
+                if (!container || !window.TabulatorHelper) return;
+
+                TabulatorHelper.createTabulator(container, {
+                    data: config.initialData || [],
+                    columns: window.TABULATOR_COLUMNS || [],
+                    pagination: 'local',
+                    paginationSize: config.pageSize || 25,
+                    paginationSizeSelector: [25, 50, 100],
+                    placeholder: 'No records found',
+                    layout: 'fitColumns',
+                    layoutColumnsOnNewData: true
+                }).then(function (table) {
+                    window._tabulator_table = table;
+                }).catch(function (error) {
+                    console.error('Failed to initialize item stock/order report grid', error);
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeReportGrid);
+            } else {
+                initializeReportGrid();
+            }
+        })();
+    </script>
 }
