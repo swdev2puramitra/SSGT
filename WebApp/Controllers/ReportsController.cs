@@ -182,13 +182,21 @@ namespace WebApp.Controllers
                 // Unconverted estimates are sourced from FW_Bills_Items. Converted
                 // estimates are represented by FW_Invoice_Items, so they are counted
                 // once through the invoice and never double-counted from the bill.
+                var openEstimateBillIds = await _context.FwBills.AsNoTracking()
+                    .Where(x => x.IsEstimateInvoice == "E")
+                    .Select(x => x.BillId)
+                    .ToListAsync();
                 var estimateOrders = await _context.FwBillsItems.AsNoTracking()
-                    .Where(x => x.Bill.IsEstimateInvoice == "E")
+                    .Where(x => openEstimateBillIds.Contains(x.BillId))
                     .GroupBy(x => x.ItemId)
                     .Select(g => new { ItemId = g.Key, Quantity = g.Sum(x => x.Quantity) })
                     .ToListAsync();
+                var invoiceIds = await _context.FwInvoices.AsNoTracking()
+                    .Where(x => x.IsEstimateInvoice == "I")
+                    .Select(x => x.InvoiceId)
+                    .ToListAsync();
                 var invoiceOrders = await _context.FwInvoiceItems.AsNoTracking()
-                    .Where(x => x.Invoice.IsEstimateInvoice == "I")
+                    .Where(x => invoiceIds.Contains(x.InvoiceId))
                     .GroupBy(x => x.ItemId)
                     .Select(g => new { ItemId = g.Key, Quantity = g.Sum(x => x.Quantity) })
                     .ToListAsync();
