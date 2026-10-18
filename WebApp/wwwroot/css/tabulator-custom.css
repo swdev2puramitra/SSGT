@@ -23,23 +23,23 @@
     .tabulator-wrapper {
         display: block;
     }
-        /* Tabulator creates its own inner element (.tabulator). Apply centering/width to it
+    /* Tabulator creates its own inner element (.tabulator). Apply centering/width to it
    and use !important to override any inline styles or upstream rules. */
-.tabulator-wrapper {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: flex-start !important;
-    overflow-x: auto; /* allow horizontal scroll when many columns */
-    padding: 8px 0;
-}
+    .tabulator-wrapper {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: flex-start !important;
+        overflow-x: auto; /* allow horizontal scroll when many columns */
+        padding: 8px 0;
+    }
 
-.tabulator-wrapper > .tabulator {
-    margin: 0 auto !important;
-    width: 50% !important; /* centered at 50% width */
-    max-width: 1000px !important;
-    min-width: 320px !important;
-    display: block !important;
-}
+        .tabulator-wrapper > .tabulator {
+            margin: 0 auto !important;
+            width: 50% !important; /* centered at 50% width */
+            max-width: 1000px !important;
+            min-width: 320px !important;
+            display: block !important;
+        }
         /* Fallback: if Tabulator injects a direct table holder, target it too */
         .tabulator-wrapper .tabulator-tableholder {
             width: 100% !important;
@@ -48,80 +48,121 @@
     /* Strong centering using flexbox on the wrapper to handle cases where Tabulator
    injects inline styles or complex markup. This centers the inner .tabulator
    element and enforces a constrained width. */
-.tabulator-wrapper {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: flex-start !important;
-}
+    .tabulator-wrapper {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: flex-start !important;
+    }
 
-.tabulator-wrapper .tabulator {
-    width: 60% !important;
-    max-width: 1000px !important;
-    min-width: 320px !important;
-}
+        .tabulator-wrapper .tabulator {
+            width: 60% !important;
+            max-width: 1000px !important;
+            min-width: 320px !important;
+        }
+    /* Table row borders for subtle separation */
+    .tabulator .tabulator-tableholder .tabulator-row {
+        border-bottom: 1px solid rgba(255,255,255,0.04) !important;
+    }
+    /* compact appearance: reduce paddings and font sizes */
+    .tabulator {
+        font-size: 12px !important;
+    }
 
-/* Table row borders for subtle separation */
-.tabulator .tabulator-tableholder .tabulator-row {
-    border-bottom: 1px solid rgba(255,255,255,0.04) !important;
-}
+        .tabulator .tabulator-header .tabulator-col {
+            padding: 8px 6px !important;
+            text-align: center;
+        }
 
-/* compact appearance: reduce paddings and font sizes */
-.tabulator { font-size: 12px !important; }
-.tabulator .tabulator-header .tabulator-col { padding: 8px 6px !important; text-align: center; }
-.tabulator .tabulator-tableholder .tabulator-table .tabulator-row .tabulator-cell { padding: 6px 6px !important; }
+        .tabulator .tabulator-tableholder .tabulator-table .tabulator-row .tabulator-cell {
+            padding: 6px 6px !important;
+        }
+        /* Alignments for specific columns are set via Tabulator column options, but apply fallbacks here */
+        .tabulator .tabulator-cell.center, .tabulator .tabulator-cell.hoz-center {
+            text-align: center !important;
+        }
 
-/* Alignments for specific columns are set via Tabulator column options, but apply fallbacks here */
-.tabulator .tabulator-cell.center, .tabulator .tabulator-cell.hoz-center { text-align: center !important; }
-.tabulator .tabulator-cell.left { text-align: left !important; }
+        .tabulator .tabulator-cell.left {
+            text-align: left !important;
+        }
+        /* Ensure numeric cells look centered; use class .num-cell on quantity/actions */
+        .tabulator .tabulator-cell.num-cell {
+            text-align: center !important;
+        }
+    /* Godown selects smaller (50%) to reduce wide form controls */
+    #fromGodown, #toGodown {
+        width: 50% !important;
+        display: inline-block !important;
+    }
+    /* Godown select helper class */
+    .godown-select {
+        width: 50% !important;
+        display: inline-block;
+        margin-right: 16px;
+    }
+    /* Address text style */
+    .address-text {
+        font-style: italic;
+        font-size: 0.95em;
+        color: var(--color-text-secondary, #b0b0b0);
+    }
+    /* Company info card */
+    .company-card {
+        background-color: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.03);
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-bottom: 12px;
+        color: var(--color-text-primary, #fff);
+    }
 
-/* Ensure numeric cells look centered; use class .num-cell on quantity/actions */
-.tabulator .tabulator-cell.num-cell { text-align: center !important; }
+        .company-card .muted {
+            color: var(--color-text-secondary, #b0b0b0);
+            font-size: 0.95em;
+        }
+    /* Action bar sticky for mobile */
+    .action-bar {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        padding: 8px 0;
+        background: transparent;
+    }
 
-/* Godown selects smaller (50%) to reduce wide form controls */
-#fromGodown, #toGodown {
-    width: 50% !important;
-    display: inline-block !important;
-}
+        .action-bar.sticky {
+            position: sticky;
+            bottom: 0;
+            z-index: 1000;
+            background: rgba(0,0,0,0.6);
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+    /* Button focus states for accessibility */
+    button:focus, select:focus, input:focus {
+        outline: 3px solid rgba(0,180,255,0.15);
+        outline-offset: 2px;
+    }
+    /* Remove button svg sizing */
+    .remove-icon {
+        display: inline-block;
+        vertical-align: middle;
+    }
+    /* Ensure on small screens the grid and selects remain usable */
+    @media (max-width: 768px) {
+        .tabulator-wrapper > .tabulator, .tabulator-wrapper .tabulator {
+            width: 100% !important;
+            min-width: 0 !important;
+        }
 
-/* Godown select helper class */
-.godown-select { width: 50% !important; display: inline-block; margin-right: 16px; }
+        #fromGodown, #toGodown {
+            width: 100% !important;
+        }
 
-/* Address text style */
-.address-text { font-style: italic; font-size: 0.95em; color: var(--color-text-secondary, #b0b0b0); }
-
-/* Company info card */
-.company-card {
-    background-color: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.03);
-    padding: 12px 16px;
-    border-radius: 6px;
-    margin-bottom: 12px;
-    color: var(--color-text-primary, #fff);
-}
-.company-card .muted { color: var(--color-text-secondary, #b0b0b0); font-size: 0.95em; }
-
-/* Action bar sticky for mobile */
-.action-bar {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    padding: 8px 0;
-    background: transparent;
-}
-.action-bar.sticky { position: sticky; bottom: 0; z-index: 1000; background: rgba(0,0,0,0.6); padding-top:10px; padding-bottom:10px; }
-
-/* Button focus states for accessibility */
-button:focus, select:focus, input:focus { outline: 3px solid rgba(0,180,255,0.15); outline-offset: 2px; }
-
-/* Remove button svg sizing */
-.remove-icon { display:inline-block; vertical-align:middle; }
-
-/* Ensure on small screens the grid and selects remain usable */
-@media (max-width: 768px) {
-    .tabulator-wrapper > .tabulator, .tabulator-wrapper .tabulator { width: 100% !important; min-width: 0 !important; }
-    #fromGodown, #toGodown { width: 100% !important; }
-    .godown-select { width: 100% !important; display: block; margin-bottom: 8px; }
-}
+        .godown-select {
+            width: 100% !important;
+            display: block;
+            margin-bottom: 8px;
+        }
+    }
 
     background-color: var(--color-bg-secondary, #1a1810) !important;
     color: var(--color-text-primary, #fff) !important;
@@ -326,6 +367,7 @@ div.tabulator-cell {
 .tabulator .tabulator-tableholder .tabulator-table .tabulator-row .tabulator-cell {
     color: #e0e0e0 !important;
 }
+
 .tabulator .tabulator-row .tabulator-cell .tabulator-data-cell-content {
     color: #e0e0e0 !important;
 }
@@ -346,9 +388,9 @@ div.tabulator-cell {
     gap: 8px !important;
 }
 
-    div.tabulator-cell:not([style*="color"]) {
-        color: #e0e0e0 !important;
-    }
+div.tabulator-cell:not([style*="color"]) {
+    color: #7262e3 !important;
+}
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
@@ -417,16 +459,16 @@ div.tabulator-cell {
     border: 1px solid #5a6268 !important;
 }
 
-.btn-dispatch-completed:hover {
-    background-color: #545b62 !important;
-    color: #ffffff !important;
-}
-
-    .btn-packing:hover {
-        background-color: #229954 !important;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3);
+    .btn-dispatch-completed:hover {
+        background-color: #545b62 !important;
+        color: #ffffff !important;
     }
+
+.btn-packing:hover {
+    background-color: #229954 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3);
+}
 
 /* Edit Button - Amber theme */
 .btn-edit {
@@ -453,3 +495,24 @@ div.tabulator-cell {
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
     }
+
+/* Item autocomplete status carried into Tabulator rows. Keep these rules
+   after the general Tabulator theme so row colors are not overridden. */
+.tabulator .tabulator-tableholder .tabulator-table .tabulator-row.item-stock-empty,
+.tabulator .tabulator-tableholder .tabulator-table .tabulator-row.item-stock-empty .tabulator-cell {
+    background-color: #dc3545 !important;
+    color: #ffffff !important;
+}
+.tabulator .tabulator-tableholder .tabulator-table .tabulator-row.item-stock-low,
+.tabulator .tabulator-tableholder .tabulator-table .tabulator-row.item-stock-low .tabulator-cell {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+.tabulator .tabulator-tableholder .tabulator-table .tabulator-row.item-stock-available,
+.tabulator .tabulator-tableholder .tabulator-table .tabulator-row.item-stock-available .tabulator-cell {
+    background-color: #198754 !important;
+    color: #ffffff !important;
+}
+.tabulator .tabulator-row.item-stock-empty .tabulator-cell * { color: #ffffff !important; }
+.tabulator .tabulator-row.item-stock-low .tabulator-cell * { color: #212529 !important; }
+.tabulator .tabulator-row.item-stock-available .tabulator-cell * { color: #ffffff !important; }
