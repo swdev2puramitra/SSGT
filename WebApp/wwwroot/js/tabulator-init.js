@@ -166,7 +166,6 @@ window.TabulatorHelper = (function(){
                             var last = grid._tabulatorHelperLastPage;
                             var cur = grid._tabulatorHelperCurrentPage;
                             if(last !== undefined && last !== null){
-                                try{ console.debug('TabulatorHelper: dataLoaded handler re-applying lastPage/currentPage', { last: last, current: cur }); }catch(e){}
                                 try{ if(typeof grid.setMaxPage === 'function') grid.setMaxPage(last); }catch(e){}
                                 try{ if(typeof grid.redraw === 'function') grid.redraw(true); }catch(e){}
 
@@ -209,12 +208,7 @@ window.TabulatorHelper = (function(){
             try{
                 setTimeout(function(){
                     try{
-                        console.debug('TabulatorHelper: post-init diagnostic for container', container);
-                        if(grid && typeof grid.getPage === 'function') console.debug('TabulatorHelper: getPage ->', grid.getPage());
-                        if(grid && typeof grid.getPageSize === 'function') console.debug('TabulatorHelper: getPageSize ->', grid.getPageSize());
-                        if(grid && typeof grid.getMaxPage === 'function') console.debug('TabulatorHelper: getMaxPage ->', grid.getMaxPage());
                         var mod = grid && grid.modules && grid.modules.pagination;
-                        console.debug('TabulatorHelper: pagination module present?', !!mod, mod);
                         if(mod){
                             if(typeof mod.updateControls === 'function') try{ mod.updateControls(); } catch(e){}
                             else if(typeof mod._updatePageButtons === 'function') try{ mod._updatePageButtons(); } catch(e){}
@@ -254,8 +248,7 @@ window.TabulatorHelper = (function(){
                     if(sel){
                         // avoid double-binding
                         if(!sel._tabulatorBound){
-                            sel._tabulatorBound = true;
-                            console.debug('TabulatorHelper: bound footer page-size select for container', container);
+                            sel._tabulatorBound = true;                            
                             sel.addEventListener('change', function(){
                                 try{
                                     var newSize = parseInt(this.value) || (grid.getPageSize ? grid.getPageSize() : undefined);

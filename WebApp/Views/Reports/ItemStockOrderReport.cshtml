@@ -44,7 +44,7 @@
             selector: '#itemStockOrderGrid',
             initialData: @Html.Raw(JsonSerializer.Serialize(rows, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })),
             paginationMode: 'local',
-            pageSize: 25,
+            pageSize: 15,
             totalCount: @rows.Count
         };
     </script>

@@ -217,7 +217,7 @@ namespace WebApp.Controllers
                     });
                 }
 
-                var orderedRows = rows.OrderBy(x => x.ItemName).ToList();
+                var orderedRows = rows.OrderByDescending(x => x.RequiredQuantity).ToList();
                 for (var index = 0; index < orderedRows.Count; index++)
                     orderedRows[index].SlNo = index + 1;
                 ViewBag.ReportRows = orderedRows;
