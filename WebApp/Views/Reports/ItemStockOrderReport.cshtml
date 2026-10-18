@@ -1,0 +1,49 @@
+@using System.Text.Json
+@using WebApp.Models
+@{
+    ViewData["Title"] = "Item Stock and Order Report";
+    var rows = ViewBag.ReportRows as List<ItemStockOrderReportRow> ?? new List<ItemStockOrderReportRow>();
+}
+
+<div class="container-fluid mt-2">
+    <div class="dashboard-header d-flex justify-content-between align-items-center">
+        <h3>Itemwise Stock and Order Report</h3>
+        <a class="btn btn-outline-info" href="@Url.Action("StockList", "Stock")">Stock Inventory</a>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(ViewBag.Error as string))
+    {
+        <div class="alert alert-danger">@ViewBag.Error</div>
+    }
+
+    <div class="tabulator-wrapper">
+        <div id="itemStockOrderGrid"></div>
+    </div>
+</div>
+
+@section Scripts {
+    @Html.Partial("_TabulatorScripts")
+    <script>
+        window.TABULATOR_COLUMNS = [
+            { title: 'SL', field: 'slNo', width: 60, hozAlign: 'center' },
+            { title: 'Item Code', field: 'itemCode', width: 120 },
+            { title: 'Item Name', field: 'itemName', minWidth: 220 },
+            { title: 'Stock Available', field: 'availableQuantity', width: 150, hozAlign: 'right' },
+            { title: 'Available Details', field: 'availableDetails', minWidth: 190 },
+            { title: 'Ordered', field: 'orderedQuantity', width: 120, hozAlign: 'right' },
+            { title: 'Ordered Details', field: 'orderedDetails', minWidth: 190 },
+            { title: 'Required', field: 'requiredQuantity', width: 120, hozAlign: 'right', formatter: function(cell) {
+                    var value = Number(cell.getValue() || 0);
+                    return value > 0 ? '<span class="text-danger fw-bold">' + value + '</span>' : '<span class="text-success fw-bold">0</span>';
+                } },
+            { title: 'Required Details', field: 'requiredDetails', minWidth: 190 }
+        ];
+        window.TABULATOR_CONFIG = {
+            selector: '#itemStockOrderGrid',
+            initialData: @Html.Raw(JsonSerializer.Serialize(rows, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })),
+            pageSize: 25,
+            totalCount: @rows.Count
+        };
+    </script>
+    @Html.Partial("_TabulatorHelper")
+}

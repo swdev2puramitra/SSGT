@@ -77,10 +77,10 @@ namespace WebApp.Controllers
             var stockDescriptions = new Dictionary<(int ItemId, int Quantity), string>();
             foreach (var packingItem in packingData)
             {
-                var key = (packingItem.ItemId, packingItem.GodownStock);
+                var key = (packingItem.ItemId, packingItem.AllocatedQty);
                 if (!stockDescriptions.TryGetValue(key, out var stockDescription))
                 {
-                    stockDescription = GetItemStockDescriptionRequest(_context, key.ItemId, key.GodownStock);
+                    stockDescription = GetItemStockDescriptionRequest(_context, key.ItemId, key.AllocatedQty);
                     stockDescriptions[key] = stockDescription;
                 }
 
@@ -166,6 +166,73 @@ namespace WebApp.Controllers
             ViewBag.UserRole = userRole;
 
             return View(packingData);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ItemStockOrderReport()
+        {
+            LoadMenusFromSession();
+            try
+            {
+                var stockByItem = await _context.FwStocks.AsNoTracking()
+                    .GroupBy(x => x.ItemId)
+                    .Select(g => new { ItemId = g.Key, Quantity = g.Sum(x => x.Quantity) })
+                    .ToDictionaryAsync(x => x.ItemId, x => x.Quantity);
+
+                // Unconverted estimates are sourced from FW_Bills_Items. Converted
+                // estimates are represented by FW_Invoice_Items, so they are counted
+                // once through the invoice and never double-counted from the bill.
+                var estimateOrders = await _context.FwBillsItems.AsNoTracking()
+                    .Where(x => x.Bill.IsEstimateInvoice == "E")
+                    .GroupBy(x => x.ItemId)
+                    .Select(g => new { ItemId = g.Key, Quantity = g.Sum(x => x.Quantity) })
+                    .ToListAsync();
+                var invoiceOrders = await _context.FwInvoiceItems.AsNoTracking()
+                    .Where(x => x.Invoice.IsEstimateInvoice == "I")
+                    .GroupBy(x => x.ItemId)
+                    .Select(g => new { ItemId = g.Key, Quantity = g.Sum(x => x.Quantity) })
+                    .ToListAsync();
+
+                var orderedByItem = estimateOrders.Concat(invoiceOrders)
+                    .GroupBy(x => x.ItemId)
+                    .ToDictionary(g => g.Key, g => g.Sum(x => x.Quantity));
+                var itemIds = stockByItem.Keys.Concat(orderedByItem.Keys).Distinct().ToList();
+                var itemInfo = await _context.FwMasterItems.AsNoTracking()
+                    .Where(x => itemIds.Contains(x.ItemId))
+                    .Select(x => new { x.ItemId, x.ItemCode, x.ItemName })
+                    .ToDictionaryAsync(x => x.ItemId);
+
+                var rows = new List<ItemStockOrderReportRow>();
+                foreach (var itemId in itemIds)
+                {
+                    var available = stockByItem.TryGetValue(itemId, out var stock) ? stock : 0;
+                    var ordered = orderedByItem.TryGetValue(itemId, out var order) ? order : 0;
+                    var required = Math.Max(ordered - available, 0);
+                    itemInfo.TryGetValue(itemId, out var info);
+                    rows.Add(new ItemStockOrderReportRow
+                    {
+                        ItemId = itemId,
+                        ItemCode = info?.ItemCode ?? string.Empty,
+                        ItemName = info?.ItemName ?? $"Item {itemId}",
+                        AvailableQuantity = available,
+                        AvailableDetails = GetItemStockDescriptionRequest(_context, itemId, Math.Max(available, 0)),
+                        OrderedQuantity = ordered,
+                        OrderedDetails = GetItemStockDescriptionRequest(_context, itemId, ordered),
+                        RequiredQuantity = required,
+                        RequiredDetails = GetItemStockDescriptionRequest(_context, itemId, required)
+                    });
+                }
+
+                ViewBag.ReportRows = rows.OrderBy(x => x.ItemName).ToList();
+                return View();
+            }
+            catch (Exception ex)
+            {
+                await _errorLogService.LogErrorAsync(User?.FindFirst("UserId")?.Value ?? "Unknown", "ReportsController.ItemStockOrderReport", null, ex);
+                ViewBag.ReportRows = new List<ItemStockOrderReportRow>();
+                ViewBag.Error = "Unable to load the stock and order report.";
+                return View();
+            }
         }
 
         [HttpPost]
