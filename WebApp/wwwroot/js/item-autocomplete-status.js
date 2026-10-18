@@ -12,6 +12,13 @@
         return quantity <= 0 ? 'item-stock-empty' : quantity <= 5 ? 'item-stock-low' : 'item-stock-available';
     };
 
+    window.applyItemStockRowStatus = function (row, data) {
+        var element = row && row.getElement ? row.getElement() : null;
+        if (!element) return;
+        element.classList.remove('item-stock-empty', 'item-stock-low', 'item-stock-available');
+        element.classList.add(window.itemAutocompleteStatusClass(data || (row.getData ? row.getData() : {})));
+    };
+
     window.renderStockAutocompleteItem = function (ul, item, label) {
         var li = $('<li>');
         var div = $('<div>')

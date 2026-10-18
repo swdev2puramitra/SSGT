@@ -115,6 +115,7 @@
                 responsiveLayout: 'collapse',
                 variableHeight: true,
                 autoResize: true,
+                rowFormatter: function (row) { window.applyItemStockRowStatus(row); },
                 columns: [
                     { title: 'Sl', formatter: 'rownum', width: 60, hozAlign: 'center' },
                     { title: 'Item Id', field: 'itemId', visible: false },
@@ -144,7 +145,7 @@
                                             var duplicate = all.some(function(r) { return r.itemId == ui.item.itemId && r !== row.getData(); });
                                             if (duplicate) { alert('This item is already added in another row.'); return; }
                                             success(ui.item.value);
-                                            row.update({ itemId: ui.item.itemId, itemPrice: ui.item.itemPrice, itemTypeId: null });
+                                            row.update({ itemId: ui.item.itemId, itemPrice: ui.item.itemPrice, stockQuantity: ui.item.stockQuantity || 0, itemTypeId: null });
                                             fetch('@Url.Action("GetItemTypes", "Billing")?itemId=' + ui.item.itemId).then(function(r) { return r.json(); }).then(function(resp) {
                                                 var opts = (resp && resp.success) ? (resp.data || []) : [];
                                                 rowItemTypes[ui.item.itemId] = opts;
@@ -261,7 +262,7 @@
                                 var all = cell.getTable().getData();
                                 var duplicate = all.some(function(r) { return r.itemId == ui.item.itemId && r !== row.getData(); });
                                 if (duplicate) { alert('This item is already added in another row.'); return; }
-                                row.update({ itemId: ui.item.itemId, itemPrice: ui.item.itemPrice });
+                                row.update({ itemId: ui.item.itemId, itemPrice: ui.item.itemPrice, stockQuantity: ui.item.stockQuantity || 0 });
                                 fetch('@Url.Action("GetItemTypes", "Billing")?itemId=' + ui.item.itemId).then(r => r.json()).then(function(resp) {
                                     var opts = (resp && resp.success) ? (resp.data || []) : [];
                                     rowItemTypes[ui.item.itemId] = opts;

@@ -239,6 +239,7 @@
                 layout: 'fitColumns',
                 pagination: false,
                 placeholder: 'No items added',
+                rowFormatter: function (row) { window.applyItemStockRowStatus(row); },
                 columns: [
                     // Use the slNo field (assigned when rows are added) so top-inserted items show their sequence number
                     { title: 'Sl No.', field: 'slNo', width: 60, headerSort: false, hozAlign: 'left', formatter: function(cell) { try { return (cell.getValue() || ''); } catch (e) { return ''; } } },
@@ -924,6 +925,7 @@
                     // store numeric id on element data
                     var itemIdVal = it.ItemId || it.itemId || 0;
                     $('#itemCode').data('itemId', itemIdVal);
+                    $('#itemCode').data('stockQuantity', Number(it.StockQuantity || it.stockQuantity || 0));
                     // If server returned price/tax info in the item DTO, pre-store them on the #itemCode element for later use
                     try {
                         var dtoPrice = (it.ItemPrice !== undefined) ? it.ItemPrice : (it.itemPrice !== undefined ? it.itemPrice : 0);
@@ -1032,6 +1034,7 @@
 
                 var itm = {
                     itemId: itemId,
+                    stockQuantity: Number($('#itemCode').data('stockQuantity') || 0),
                     itemCode: itemCodeVal,
                     itemName: document.getElementById('itemName').value || '',
                     itemTypeId: itemTypeId,
@@ -1140,7 +1143,7 @@
                     .then(function(resp) {
                          try {
                              if (resp && resp.success) {
-                                 itm.detailed = (itm.originalEntry ? itm.originalEntry + ' -> ' : '') + (resp.data || '');
+                                 itm.detailed = (resp.data || '');
                              }
                          } catch (e) { }
 
@@ -1184,7 +1187,7 @@
                                             return;
                                         }
                                     } catch (e) { }
-                                    existingRow.update({ itemId: itm.itemId, itemCode: itm.itemCode, itemName: itm.itemName, itemTypeId: itm.itemTypeId, itemTypeName: itm.itemTypeName, qtyPerType: itm.qtyPerType, quantity: itm.quantity, itemPrice: itm.itemPrice, detailed: itm.detailed, cgst: itm.cgst || 0, sgst: itm.sgst || 0, igst: itm.igst || 0 });
+                                    existingRow.update({ itemId: itm.itemId, stockQuantity: itm.stockQuantity || 0, itemCode: itm.itemCode, itemName: itm.itemName, itemTypeId: itm.itemTypeId, itemTypeName: itm.itemTypeName, qtyPerType: itm.qtyPerType, quantity: itm.quantity, itemPrice: itm.itemPrice, detailed: itm.detailed, cgst: itm.cgst || 0, sgst: itm.sgst || 0, igst: itm.igst || 0 });
                                     try {
                                         var etc = existingRow.getCell('totalCost'); if (etc && typeof etc.setValue === 'function') {
                                             var displayQtyE = (Number(itm.quantity || 0) / Number(itm.qtyPerType || 1)) || 0;

@@ -48,6 +48,12 @@
 .item-stock-empty { background-color: #dc3545 !important; color: #fff !important; }
 .item-stock-low { background-color: #ffc107 !important; color: #212529 !important; }
 .item-stock-available { background-color: #198754 !important; color: #fff !important; }
+.tabulator-row.item-stock-empty,
+.tabulator-row.item-stock-empty .tabulator-cell { background-color: #dc3545 !important; color: #fff !important; }
+.tabulator-row.item-stock-low,
+.tabulator-row.item-stock-low .tabulator-cell { background-color: #ffc107 !important; color: #212529 !important; }
+.tabulator-row.item-stock-available,
+.tabulator-row.item-stock-available .tabulator-cell { background-color: #198754 !important; color: #fff !important; }
 
 .stock-autocomplete {
     appearance: none !important;

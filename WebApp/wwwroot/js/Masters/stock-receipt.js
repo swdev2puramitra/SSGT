@@ -153,6 +153,7 @@
             var itemCode = option.itemCode || option.ItemCode || (parts ? parts[2] : '');
             row.update({
                 itemId: itemId,
+                stockQuantity: Number(option.stockQuantity || option.StockQuantity || 0),
                 itemCode: itemCode,
                 itemName: itemName,
                 itemLabel: label || getItemLabel({ itemCode: itemCode, itemName: itemName }),
@@ -327,6 +328,7 @@
             placeholder: 'No stock items added',
             reactiveData: true,
             index: 'id',
+            rowFormatter: function (row) { window.applyItemStockRowStatus(row); },
             columns: [
                 { title: 'Sl No', formatter: 'rownum', width: 55, hozAlign: 'center' },
                 { title: 'Item Code / Name', field: 'itemLabel', editor: createSuggestionEditor, minWidth: 160, widthGrow: 3 },
