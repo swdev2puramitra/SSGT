@@ -32,15 +32,18 @@
             { title: 'Available Details', field: 'availableDetails', minWidth: 190 },
             { title: 'Ordered', field: 'orderedQuantity', width: 120, hozAlign: 'right' },
             { title: 'Ordered Details', field: 'orderedDetails', minWidth: 190 },
-            { title: 'Required', field: 'requiredQuantity', width: 120, hozAlign: 'right', formatter: function(cell) {
+            {
+                title: 'Required', field: 'requiredQuantity', width: 120, hozAlign: 'right', formatter: function(cell) {
                     var value = Number(cell.getValue() || 0);
                     return value > 0 ? '<span class="text-danger fw-bold">' + value + '</span>' : '<span class="text-success fw-bold">0</span>';
-                } },
+                }
+            },
             { title: 'Required Details', field: 'requiredDetails', minWidth: 190 }
         ];
         window.TABULATOR_CONFIG = {
             selector: '#itemStockOrderGrid',
             initialData: @Html.Raw(JsonSerializer.Serialize(rows, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })),
+            paginationMode: 'local',
             pageSize: 25,
             totalCount: @rows.Count
         };

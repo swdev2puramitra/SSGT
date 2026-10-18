@@ -28,7 +28,7 @@
 
             var options = {
                 columns: cols,
-                pagination: 'remote',
+                pagination: cfg.paginationMode || (ajaxUrl ? 'remote' : 'local'),
                 paginationSize: pageSize,
                 ajaxURL: ajaxUrl,
                 ajaxConfig: 'GET',

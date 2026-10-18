@@ -2,6 +2,7 @@ namespace WebApp.Models;
 
 public sealed class ItemStockOrderReportRow
 {
+    public int SlNo { get; set; }
     public int ItemId { get; set; }
     public string ItemCode { get; set; } = string.Empty;
     public string ItemName { get; set; } = string.Empty;

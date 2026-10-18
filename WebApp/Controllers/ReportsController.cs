@@ -231,7 +231,10 @@ namespace WebApp.Controllers
                     });
                 }
 
-                ViewBag.ReportRows = rows.OrderBy(x => x.ItemName).ToList();
+                var orderedRows = rows.OrderBy(x => x.ItemName).ToList();
+                for (var index = 0; index < orderedRows.Count; index++)
+                    orderedRows[index].SlNo = index + 1;
+                ViewBag.ReportRows = orderedRows;
                 return View();
             }
             catch (Exception ex)
