@@ -15,6 +15,12 @@
                 <label for="invoiceNoFilter">Invoice No</label>
                 <input id="invoiceNoFilter" class="form-control" placeholder="Search invoice" />
             </div>
+            <div class="filter-group item-autocomplete-filter">
+                <label for="itemFilter">Item</label>
+                <input id="itemFilter" class="form-control" placeholder="Search item name or code" autocomplete="off" />
+                <input id="itemIdFilter" type="hidden" />
+                <div id="itemFilterSuggestions" class="item-filter-suggestions" role="listbox"></div>
+            </div>
             <div class="filter-group align-self-end">
                 <button id="clearStockFilters" type="button" class="btn btn-secondary">Clear</button>
             </div>
@@ -61,9 +67,36 @@
         };
         window.stockListConfig = {
             listUrl: '@Url.Action("GetStockList", "Masters")',
-            deleteUrl: '@Url.Action("DeleteStock", "Masters")'
+            deleteUrl: '@Url.Action("DeleteStock", "Masters")',
+            suggestItemsUrl: '@Url.Action("SuggestItems", "Masters")'
         };
     </script>
     @Html.Partial("_TabulatorHelper")
     <script src="~/js/Masters/stock-list.js" asp-append-version="true"></script>
+    <style>
+        .item-autocomplete-filter { position: relative; }
+        .item-filter-suggestions {
+            position: absolute;
+            z-index: 1050;
+            left: 0;
+            right: 0;
+            display: none;
+            max-height: 220px;
+            overflow-y: auto;
+            background: var(--bs-body-bg, #fff);
+            border: 1px solid var(--bs-border-color, #ced4da);
+            border-radius: .25rem;
+        }
+        .item-filter-suggestions button {
+            display: block;
+            width: 100%;
+            padding: .4rem .55rem;
+            border: 0;
+            background: transparent;
+            color: inherit;
+            text-align: left;
+        }
+        .item-filter-suggestions button:hover,
+        .item-filter-suggestions button:focus { background: rgba(13, 202, 240, .15); }
+    </style>
 }

@@ -77,6 +77,7 @@ public sealed class MastersController : BaseController
         int pageSize = 15,
         string? stockFrom = null,
         string? invoiceNo = null,
+        int? itemId = null,
         CancellationToken cancellationToken = default)
     {
         page = Math.Max(1, page);
@@ -107,6 +108,12 @@ public sealed class MastersController : BaseController
         {
             var value = invoiceNo.Trim();
             query = query.Where(row => row.InvoiceNo != null && row.InvoiceNo.Contains(value));
+        }
+
+        if (itemId is > 0)
+        {
+            query = query.Where(row => _context.FwStocks.Any(stock =>
+                stock.StockId == row.StockId && stock.ItemId == itemId.Value));
         }
 
         var total = await query.CountAsync(cancellationToken);
